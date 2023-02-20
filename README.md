@@ -1,6 +1,6 @@
 # OneShot
 
-<img alt="Logo" src="assets/logo.svg" width="170" />
+<img alt="Logo" src="logo/v1/OneShot.svg" width="170" />
 
 **Remember the happy days!**
 
