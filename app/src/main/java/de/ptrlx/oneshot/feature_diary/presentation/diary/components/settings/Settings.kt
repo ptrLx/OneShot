@@ -148,7 +148,6 @@ fun AboutText(modifier: Modifier = Modifier) {
                 Uri.parse(gitUrl)
             )
         }
-        // MaterialTheme.typography didn't do the job
         ClickableText(
             text = annotatedLicenseText,
             style = bodyStyle,
