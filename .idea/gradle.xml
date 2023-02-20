@@ -9,8 +9,8 @@
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="modules">
           <set>
-            <option value="/run/media/peter/Data/projects/it6-kotl/oneShot-compose/OneShot" />
-            <option value="/run/media/peter/Data/projects/it6-kotl/oneShot-compose/OneShot/app" />
+            <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/app" />
           </set>
         </option>
       </GradleProjectSettings>

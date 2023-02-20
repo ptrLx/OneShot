@@ -1,15 +1,19 @@
 package de.ptrlx.oneshot.feature_diary.presentation.diary.components.settings
 
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -18,6 +22,7 @@ import de.ptrlx.oneshot.feature_diary.presentation.diary.DiaryEvent
 import de.ptrlx.oneshot.feature_diary.presentation.diary.DiaryViewModel
 import de.ptrlx.oneshot.feature_diary.presentation.diary.components.common.RoundedButton
 import de.ptrlx.oneshot.feature_diary.presentation.diary.components.common.SetLocation
+
 
 /**
  * Main Composable for settings screen.
@@ -80,11 +85,17 @@ fun SettingsButtons(
 
 @Composable
 fun AboutText(modifier: Modifier = Modifier) {
+    val bodyStyle = TextStyle(
+        color = MaterialTheme.colors.onBackground,
+        fontSize = 14.sp
+    )
+
     Column(modifier = modifier) {
         Text(
             text = "Thank you for using OneShot!",
             style = MaterialTheme.typography.h4
         )
+        Spacer(modifier = Modifier.size(8.dp))
 
         Text(
             text = "About",
@@ -92,32 +103,63 @@ fun AboutText(modifier: Modifier = Modifier) {
             fontWeight = FontWeight.Bold
         )
         Text(
-            text = "OneShot is made to remind you of the special moments. " +
-                    "Because every day has at least one. And that's what counts in life! " +
-                    "So make it your habit and remember the happy days!"
+            text = "OneShot is made to remind you of the special moments. Because every day has at least one. And that's what counts in life! So make it your habit and remember the happy days!",
+            style = bodyStyle
         )
+        Spacer(modifier = Modifier.size(8.dp))
+
         Text(
             text = "Privacy",
             style = MaterialTheme.typography.h5,
             fontWeight = FontWeight.Bold
         )
         Text(
-            text = "Your data is yours!\n" +
-                    "OneShot will not send data to any server without your consent. " +
-                    "The app requires currently no internet permission."
-
-            //todo "Internet permission is only needed for fetching the motivation API. It can safely be removed in settings.\n"
+            text = "Your data is yours! OneShot will not send data to any server without your consent. The app requires currently no internet permission.",
+            style = bodyStyle
         )
+        Spacer(modifier = Modifier.size(8.dp))
+
         Text(
             text = "License",
             style = MaterialTheme.typography.h5,
             fontWeight = FontWeight.Bold
         )
-        Text(
-            text = "This app is made with passion and love by ptrLx️. " +
-                    "It is free software released under GPLv3 and comes with absolutely no warranty!"
-                    "Fork me on GitHub: https://github.com/ptrLx/OneShot"
+        val gitUrl = "https://github.com/ptrLx/OneShot"
+        val annotatedLicenseText = buildAnnotatedString {
+            append(
+                "This app is made with passion and love by ptrLx️. It is free software released under GPLv3 and comes with absolutely no warranty. "
+            )
+            append("Fork me on ")
+
+            withStyle(
+                style = SpanStyle(
+                    color = MaterialTheme.colors.primary,
+                    fontWeight = FontWeight.Bold
+                )
+            ) {
+                appendLink("GitHub", gitUrl)
+            }
+            append("!")
+        }
+        val context = LocalContext.current
+        val intent = remember {
+            Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse(gitUrl)
+            )
+        }
+        // MaterialTheme.typography didn't do the job
+        ClickableText(
+            text = annotatedLicenseText,
+            style = bodyStyle,
+            onClick = { offset ->
+                annotatedLicenseText.onLinkClick(offset) {
+                    context.startActivity(intent)
+                }
+            }
         )
+        Spacer(modifier = Modifier.size(8.dp))
+
         Text(
             text = "Open Source Licenses",
             style = MaterialTheme.typography.h5,
@@ -126,8 +168,21 @@ fun AboutText(modifier: Modifier = Modifier) {
         Text(
             text = "Coil - Apache License Version 2.0\n" +
                     "Dagger - Apache License Version 2.0\n" +
-                    "Accompanist - Apache License Version 2.0"
+                    "Accompanist - Apache License Version 2.0",
+            style = bodyStyle
         )
+    }
+}
+
+fun AnnotatedString.Builder.appendLink(linkText: String, linkUrl: String) {
+    pushStringAnnotation(tag = linkUrl, annotation = linkUrl)
+    append(linkText)
+    pop()
+}
+
+fun AnnotatedString.onLinkClick(offset: Int, onClick: (String) -> Unit) {
+    getStringAnnotations(start = offset, end = offset).firstOrNull()?.let {
+        onClick(it.item)
     }
 }
 
