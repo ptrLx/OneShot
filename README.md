@@ -8,7 +8,7 @@ OneShot is made to remind you of the special moments. Because every day has at l
 
 ## Features
 
-OneShot is a simple android photo diary app (>= android 10) written in Kotlin and Jetpack Compose.  
+OneShot is a simple but private android photo diary app (>= android 10) written in Kotlin and Jetpack Compose.  
 You can capture one entry per day, write your diary and store your happiness.  
 It stores your photos in a local folder and your diary within the app. Import and export to JSON is possible.
 
