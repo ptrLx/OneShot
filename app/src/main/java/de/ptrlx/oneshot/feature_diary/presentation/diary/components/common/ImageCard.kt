@@ -54,7 +54,7 @@ fun ImageCard(
         ) {
             AsyncImage(
                 modifier = Modifier.fillMaxWidth(),
-                model = viewModel.fielManager?.resolveUri(entry.relativePath),
+                model = viewModel.fileManager?.resolveUri(entry.relativePath),
                 contentDescription = contentDescription,
                 error = painterResource(R.drawable.ic_baseline_error_24),
                 contentScale = if (!expanded) ContentScale.Crop else ContentScale.FillWidth,

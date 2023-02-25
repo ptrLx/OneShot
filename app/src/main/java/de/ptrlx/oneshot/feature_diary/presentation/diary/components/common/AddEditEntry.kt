@@ -176,7 +176,7 @@ fun AddEditOrSetLocationButton(
     modifier: Modifier = Modifier,
     viewModel: DiaryViewModel,
 ) {
-    if (viewModel.fielManager == null)
+    if (viewModel.fileManager == null)
         SetLocation(modifier, viewModel = viewModel)
     else
         AddEntryButton(modifier, viewModel = viewModel)
