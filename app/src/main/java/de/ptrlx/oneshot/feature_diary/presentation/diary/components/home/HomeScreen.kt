@@ -18,6 +18,7 @@ import de.ptrlx.oneshot.feature_diary.presentation.diary.DiaryEvent
 import de.ptrlx.oneshot.feature_diary.presentation.diary.DiaryViewModel
 import de.ptrlx.oneshot.feature_diary.presentation.diary.components.common.AddEditOrSetLocationButton
 import de.ptrlx.oneshot.feature_diary.presentation.diary.components.common.ImageCard
+import de.ptrlx.oneshot.feature_diary.presentation.diary.components.common.ImportImageButton
 
 /**
  * Main Composable for home screen.
@@ -32,13 +33,17 @@ fun HomeScreen(
     viewModel: DiaryViewModel,
     controller: NavController
 ) {
+    //todo pull to reload event => reset uri resolver storage; reset viewmodel.now; kill and relaunch jobs; display loading spinner
     Column(
-        modifier = modifier
-            .verticalScroll(rememberScrollState()),
+        modifier = modifier,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        //todo pull to reload event => reset uri resolver storage; reset viewmodel.now; kill and relaunch jobs; display loading spinner
-        Column(verticalArrangement = Arrangement.spacedBy(32.dp)) {
+        Column(
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .weight(1f),
+            verticalArrangement = Arrangement.spacedBy(32.dp)
+        ) {
             HomeTop(
                 Modifier.padding(start = 8.dp, end = 8.dp),
                 controller = controller
@@ -47,11 +52,15 @@ fun HomeScreen(
             Flashbacks(
                 viewModel = viewModel
             )
+            //todo motivation => fetch motivation api and display daily motivation -> Store in DiaryEntry.motivation
 
-            //todo fetch motivation api and display daily motivation -> Store in DiaryEntry.motivation
         }
+        ImportImageButton(
+            Modifier.padding(start = 8.dp, end = 8.dp),
+            viewModel = viewModel
+        )
         AddEditOrSetLocationButton(
-            Modifier.padding(top = 16.dp, bottom = 8.dp, start = 8.dp, end = 8.dp),
+            Modifier.padding(start = 8.dp, end = 8.dp),
             viewModel = viewModel
         )
     }

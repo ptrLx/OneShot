@@ -1,7 +1,6 @@
 package de.ptrlx.oneshot.feature_diary.presentation.diary.components.stats
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -29,7 +28,7 @@ fun StatsScreen(
 ) {
     Column(
         modifier = modifier
-            .padding(bottom = 8.dp, top = 8.dp)
+            .padding(top = 8.dp)
 //            .verticalScroll(rememberScrollState()),
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -163,9 +162,7 @@ fun HappinessCalendarEntry(
                 color = onColor
             )
             Text(
-                fontSize = 30.sp, color = onColor, text = (entry?.let {
-                    it.happiness
-                } ?: run { HappinessType.NOT_SPECIFIED }).emoticon()
+                fontSize = 30.sp, color = onColor, text = (entry?.happiness ?: run { HappinessType.NOT_SPECIFIED }).emoticon()
             )
         }
     }

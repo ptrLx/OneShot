@@ -1,7 +1,6 @@
 package de.ptrlx.oneshot.feature_diary.presentation.diary
 
 import android.app.Activity
-import android.content.Context
 import android.net.Uri
 import de.ptrlx.oneshot.feature_diary.domain.model.DiaryEntry
 import de.ptrlx.oneshot.feature_diary.domain.util.HappinessType
@@ -16,9 +15,10 @@ sealed class DiaryEvent {
         val text: String? = null,
         val happiness: HappinessType? = null
     ) : DiaryEvent()
+    data class ImageImport(val uri: Uri): DiaryEvent()
 
-    object WriteExport : DiaryEvent()
-    object ReadImport : DiaryEvent()
+    object WriteDBExport : DiaryEvent()
+    object ReadDBImport : DiaryEvent()
     object CaptureImageAborted : DiaryEvent()
     object CaptureUpdateEntry : DiaryEvent()
     object SnackbarDismissed : DiaryEvent()

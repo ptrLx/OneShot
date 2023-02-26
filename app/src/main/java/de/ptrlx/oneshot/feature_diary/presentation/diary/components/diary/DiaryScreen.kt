@@ -24,28 +24,19 @@ fun DiaryScreen(
     modifier: Modifier = Modifier,
     viewModel: DiaryViewModel
 ) {
-    Box(
+    Column(
         modifier = modifier
-            .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
+            .padding(start = 8.dp, end = 8.dp)
     ) {
-        //todo use fab instead
-        AddEditOrSetLocationButton(
-            modifier = Modifier
-                .align(Alignment.BottomCenter),
+        DiaryTop()
+        DiaryEntryList(
+            modifier = Modifier.weight(1f),
             viewModel = viewModel
         )
-        Column(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(
-                    bottom = 64.dp
-                )
-        ) {
-            DiaryTop()
-            DiaryEntryList(
-                viewModel = viewModel
-            )
-        }
+        AddEditOrSetLocationButton(
+            viewModel = viewModel,
+            hideWhenCaptured = true
+        )
     }
 }
 

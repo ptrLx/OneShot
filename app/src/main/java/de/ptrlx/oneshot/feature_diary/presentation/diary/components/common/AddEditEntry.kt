@@ -22,10 +22,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.ptrlx.oneshot.R
+import de.ptrlx.oneshot.feature_diary.domain.model.DiaryEntry
 import de.ptrlx.oneshot.feature_diary.domain.util.HappinessType
 import de.ptrlx.oneshot.feature_diary.presentation.diary.DiaryEvent
 import de.ptrlx.oneshot.feature_diary.presentation.diary.DiaryViewModel
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 
 @Composable
@@ -70,7 +72,7 @@ fun AddEditEntryModalBottomSheetContent(
             .fillMaxWidth()
             .height(670.dp)
     ) {
-        if (!viewModel.currentIsCapture)
+        if (!viewModel.currentIsNewEntry)
             Icon(
                 Icons.Default.Delete,
                 contentDescription = "delete",
@@ -175,9 +177,17 @@ fun AddEditEntryModalBottomSheetContent(
 fun AddEditOrSetLocationButton(
     modifier: Modifier = Modifier,
     viewModel: DiaryViewModel,
+    hideWhenCaptured: Boolean = false
 ) {
+    var lastEntry: DiaryEntry? = null
+    try {
+      lastEntry = viewModel.entries.last()
+    } catch (e: NoSuchElementException) {}
+
     if (viewModel.fileManager == null)
-        SetLocation(modifier, viewModel = viewModel)
-    else
-        AddEntryButton(modifier, viewModel = viewModel)
+        SetLocation(modifier.padding(top = 4.dp), viewModel = viewModel)
+    else if ((!hideWhenCaptured) || (lastEntry?.date != LocalDate.now()))
+        AddEntryButton(modifier.padding(top = 4.dp), viewModel = viewModel)
+
 }
+
