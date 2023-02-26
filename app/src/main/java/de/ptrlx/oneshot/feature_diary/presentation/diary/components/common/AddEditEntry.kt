@@ -72,7 +72,7 @@ fun AddEditEntryModalBottomSheetContent(
             .fillMaxWidth()
             .height(670.dp)
     ) {
-        if (!viewModel.currentIsCapture)
+        if (!viewModel.currentIsNewEntry)
             Icon(
                 Icons.Default.Delete,
                 contentDescription = "delete",
