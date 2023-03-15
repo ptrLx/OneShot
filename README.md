@@ -1,8 +1,15 @@
+<h1> <img src="logo/v1/OneShot_709x709.svg"
+  width="128"
+  height="128"
+  style="float:left;">
+
 # OneShot
 
-<img alt="Logo" src="logo/v1/OneShot.svg" width="170" />
+</h1>
 
 **Remember the happy days!**
+
+<br>
 
 OneShot is made to remind you of the special moments. Because every day has at least one. And that's what counts in life! So make it your habit and remember the happy days!
 
@@ -14,17 +21,19 @@ It stores your photos in a local folder and your diary within the app. Import an
 
 <br>
 <div style="display:flex;">
-<img alt="preview 1" src="assets/preview_1.png" width="30%">
-<img style="padding-left: 8px;" alt="preview 2" src="assets/preview_2.png" width="30%">
-<img style="padding-left: 8px;" alt="preview 3" src="assets/preview_3.png" width="30%">
+<img alt="preview 1" src="fastlane/metadata/android/en-US/images/phoneScreenshots/preview_1.jpg" width="30%">
+<img style="padding-left: 8px;" alt="preview 2" src="fastlane/metadata/android/en-US/images/phoneScreenshots/preview_2.jpg" width="30%">
+<img style="padding-left: 8px;" alt="preview 3" src="fastlane/metadata/android/en-US/images/phoneScreenshots/preview_3.jpg" width="30%">
 </div>
 
 <div style="display:flex;  padding-top: 8px;">
-<img  alt="preview 1" src="assets/preview_4.png" width="30%">
-<img style="padding-left: 8px;" alt="preview 2" src="assets/preview_5.png" width="30%">
-<img style="padding-left: 8px;" alt="preview 3" src="assets/preview_6.png" width="30%">
+<img  alt="preview 1" src="fastlane/metadata/android/en-US/images/phoneScreenshots/preview_4.jpg" width="30%">
+<img style="padding-left: 8px;" alt="preview 2" src="fastlane/metadata/android/en-US/images/phoneScreenshots/preview_5.jpg" width="30%">
+<img style="padding-left: 8px;" alt="preview 3" src="fastlane/metadata/android/en-US/images/phoneScreenshots/preview_6.jpg" width="30%">
 </div>
 <br>
+
+Thank's to [@Cynog](https://github.com/Cynog) for providing the beautiful images in the screenshots!
 
 ## Privacy
 

@@ -76,7 +76,7 @@ fun SettingsButtons(
         Spacer(modifier = Modifier.size(8.dp))
         RoundedButton(
             text = "Export database",
-            onClick = { viewModel.onEvent(DiaryEvent.WriteExport) },
+            onClick = { viewModel.onEvent(DiaryEvent.WriteDBExport) },
             arrow = false
         )
         Spacer(modifier = Modifier.size(8.dp))
@@ -227,7 +227,7 @@ fun ImportDatabaseButton(
                         colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.error),
                         onClick = {
                             showDialog = false
-                            viewModel.onEvent(DiaryEvent.ReadImport)
+                            viewModel.onEvent(DiaryEvent.ReadDBImport)
                         }) {
                         Text("OK", color = MaterialTheme.colors.onError)
                     }

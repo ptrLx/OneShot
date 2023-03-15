@@ -2,19 +2,15 @@ package de.ptrlx.oneshot.feature_diary.domain.util
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
+import android.os.FileUtils
 import androidx.documentfile.provider.DocumentFile
 import de.ptrlx.oneshot.feature_diary.domain.model.DiaryEntry
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
-import kotlinx.serialization.json.internal.readJson
-import okio.use
 
-class DiaryFileManager(baseLocation: Uri, context: Context) {
-    val baseLocation = baseLocation
-    val context = context
+
+class DiaryFileManager(val baseLocation: Uri, val context: Context) {
     private val baseFolder: DocumentFile? = DocumentFile.fromTreeUri(context, baseLocation)
     private var diaryEntryFileRepository = HashMap<String, Uri?>()
     private val baseLocationDocumentPath = baseLocation.encodedPath.toString().substring(6)
@@ -56,13 +52,46 @@ class DiaryFileManager(baseLocation: Uri, context: Context) {
     /**
      * Create a new dummy file before launching camara activity.
      *
-     * @param filename
+     * @param filename filename of new dummy
      * @return the URI of the dummy file or null if file could not be created
      */
     fun createNewImageDummy(filename: String): Uri? {
         val file: DocumentFile? = baseFolder?.createFile("image/jpg", filename)
         return file?.uri
     }
+
+    /**
+     * Copy an image to baseFolder.
+     *
+     * @param srcUri Source Uri of image
+     * @param filename filename of new image
+     */
+    fun copyImage(srcUri: Uri, filename: String): Uri? {
+        val file: DocumentFile? = baseFolder?.createFile("image/jpg", filename)
+        return file?.let { df ->
+            val inStream = context.contentResolver.openInputStream(srcUri)
+            inStream?.let {
+                val uri = context.contentResolver.openOutputStream(df.uri)?.let { outStream ->
+                    FileUtils.copy(
+                        inStream,
+                        outStream
+                    )
+
+                    outStream.flush()
+                    outStream.close()
+
+                    df.uri
+                } ?: run {
+                    deleteImage(filename)
+                    null
+                }
+
+                inStream.close()
+                uri
+            }
+        }
+    }
+
 
     /**
      * Delete an image from baseFolder.
@@ -77,7 +106,7 @@ class DiaryFileManager(baseLocation: Uri, context: Context) {
      * Write a JSON export to base location
      *
      * @param filename
-     * @param export JSON String of export
+     * @param entries list of diary entries to export
      * @return success of write
      */
     fun writeJSONExport(filename: String, entries: List<DiaryEntry>): Boolean {

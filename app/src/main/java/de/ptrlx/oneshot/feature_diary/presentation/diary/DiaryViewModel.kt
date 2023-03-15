@@ -47,7 +47,7 @@ class DiaryViewModel @Inject constructor(
 //    private var searchQuery: String by mutableStateOf("")
 //    private var searchEntries: List<DiaryEntry> by mutableStateOf(emptyList())
 
-    var fielManager: DiaryFileManager? by mutableStateOf(null)
+    var fileManager: DiaryFileManager? by mutableStateOf(null)
         private set
 
     var currentImageAddEditEntry: DiaryEntry? by mutableStateOf(null)
@@ -77,7 +77,7 @@ class DiaryViewModel @Inject constructor(
     var snackbarCause: SnackbarCause = SnackbarCause.DELETE_ENTRY
         private set
 
-    var currentIsCapture: Boolean = true
+    var currentIsNewEntry: Boolean = true
         private set
 
     init {
@@ -119,10 +119,14 @@ class DiaryViewModel @Inject constructor(
                 showModalBottomSheet()
                 Log.d(LOG_TAG, "Image saved")
             }
+            is DiaryEvent.ImageImport -> {
+                createNewImageDummyOrImport(copyImageUri = event.uri)
+                showModalBottomSheet()
+            }
             is DiaryEvent.CaptureImageAborted -> {
                 // cleanup created (but empty) file
                 currentImageAddEditEntry?.let { entry ->
-                    fielManager?.deleteImage(entry.relativePath)
+                    fileManager?.deleteImage(entry.relativePath)
                     currentImageAddEditEntry = null
                 }
             }
@@ -149,7 +153,7 @@ class DiaryViewModel @Inject constructor(
             }
             is DiaryEvent.DiaryEditEntry -> {
                 currentImageAddEditEntry = event.entry
-                currentIsCapture = false
+                currentIsNewEntry = false
                 showModalBottomSheet()
             }
             is DiaryEvent.FilterHappinessType -> {
@@ -189,21 +193,21 @@ class DiaryViewModel @Inject constructor(
                     // nothing to do here
                 }
             }
-            is DiaryEvent.WriteExport -> {
+            is DiaryEvent.WriteDBExport -> {
                 if (entries.isNotEmpty()) {
                     val timestamp = System.currentTimeMillis()
                     val currentDate =
                         SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault()).format(timestamp)
                     val filename = "OneShot_DB_$currentDate.json"
-                    val success = fielManager?.writeJSONExport(filename, entries)
+                    val success = fileManager?.writeJSONExport(filename, entries)
                     snackbarCause =
                         (if (success == true) SnackbarCause.SUCCESS else SnackbarCause.ERROR)
                     isSnackbarShowing = true
                 }
             }
-            is DiaryEvent.ReadImport -> {
+            is DiaryEvent.ReadDBImport -> {
                 var success = false
-                fielManager?.let { fileManager ->
+                fileManager?.let { fileManager ->
                     currentImportDatabaseUri?.let { uri ->
                         Log.d(LOG_TAG, "Importing entries from $uri")
                         val importEntries = fileManager.readJSONExport(uri)
@@ -243,7 +247,7 @@ class DiaryViewModel @Inject constructor(
                 diaryUseCases.getSettingsString(imageBaseLocationKey).onEach { uriString ->
                     Log.d(LOG_TAG, "New element received in GetImageBaseLocationJob")
                     uriString?.let {
-                        fielManager = DiaryFileManager(Uri.parse(uriString), context)
+                        fileManager = DiaryFileManager(Uri.parse(uriString), context)
                     }
                 }.launchIn(viewModelScope)
 
@@ -289,16 +293,24 @@ class DiaryViewModel @Inject constructor(
      * @return Uri that can be used to store an image
      */
     fun createNewImageDummy(): Uri? {
+        return createNewImageDummyOrImport(copyImageUri = null)
+    }
+
+    private fun createNewImageDummyOrImport(copyImageUri: Uri? = null): Uri? {
         val localDate = LocalDate.now()
         val timestamp = System.currentTimeMillis()
         val currentDate =
             SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault()).format(timestamp)
         val filename = "OneShot_$currentDate.jpg"
 
-        val uri = fielManager?.createNewImageDummy(filename)
+        val uri = copyImageUri?.let {
+            fileManager?.copyImage(srcUri = copyImageUri, filename = filename)
+        }?: run {
+            fileManager?.createNewImageDummy(filename)
+        }
 
         uri?.let {
-            currentIsCapture = true
+            currentIsNewEntry = true
             currentImageAddEditEntry = DiaryEntry(
                 localDate,
                 timestamp / 1000L,

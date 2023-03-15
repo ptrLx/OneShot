@@ -16,3 +16,5 @@ local.properties
 *.code-workspace
 /app/release/*
 sample-database.zip
+todo.md
+thomas-sample-img

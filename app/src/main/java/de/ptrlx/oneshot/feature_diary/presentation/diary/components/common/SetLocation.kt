@@ -22,7 +22,7 @@ fun SetLocation(
     val launcher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
             uri?.let {
-                viewModel.fielManager?.let {
+                viewModel.fileManager?.let {
                     val toast =
                         Toast.makeText(
                             context,
@@ -38,7 +38,7 @@ fun SetLocation(
     RoundedButton(
         modifier = modifier,
         text = "Set image file path",
-        onClick = { launcher.launch(viewModel.fielManager?.baseLocation) },
+        onClick = { launcher.launch(viewModel.fileManager?.baseLocation) },
         arrow = arrow
     )
 }
