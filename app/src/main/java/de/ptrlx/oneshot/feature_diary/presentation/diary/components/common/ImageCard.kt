@@ -59,42 +59,43 @@ fun ImageCard(
                 error = painterResource(R.drawable.ic_baseline_error_24),
                 contentScale = if (!expanded) ContentScale.Crop else ContentScale.FillWidth,
             )
-//            }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.Black
-                            ),
-                            startY = 300f
+            if (!expanded) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    Color.Black
+                                ),
+                                startY = 300f
+                            )
                         )
-                    )
-            )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(12.dp),
-                contentAlignment = Alignment.BottomStart
-            ) {
-                Text(
-                    description,
-                    style = TextStyle(color = Color.White, fontSize = 16.sp),
-                    fontWeight = FontWeight.Bold
                 )
-            }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(12.dp),
-                contentAlignment = Alignment.BottomEnd
-            ) {
-                Text(entry.happiness.emoticon(), style = TextStyle(fontSize = 16.sp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(12.dp),
+                    contentAlignment = Alignment.BottomStart
+                ) {
+                    Text(
+                        description,
+                        style = TextStyle(color = Color.White, fontSize = 16.sp),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(12.dp),
+                    contentAlignment = Alignment.BottomEnd
+                ) {
+                    Text(entry.happiness.emoticon(), style = TextStyle(fontSize = 16.sp))
+                }
             }
         }
     }
