@@ -10,9 +10,11 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import de.ptrlx.oneshot.R
 import de.ptrlx.oneshot.feature_diary.domain.model.DiaryEntry
 import de.ptrlx.oneshot.feature_diary.presentation.diary.DiaryEvent
 import de.ptrlx.oneshot.feature_diary.presentation.diary.DiaryViewModel
@@ -78,7 +80,11 @@ fun Flashbacks(
     viewModel: DiaryViewModel
 ) {
     val flashbackTitles =
-        listOf("Yesterday", "Last very happy day", "7 days ago", "14 days ago")
+        listOf(
+            stringResource(R.string.yesterday),
+            stringResource(R.string.last_very_happy_day),
+            stringResource(R.string.days_ago_7),
+            stringResource(R.string.days_ago_14))
     val stripedFlashbacks = (if (viewModel.flashbacks.size >= 4)
         (flashbackTitles.mapIndexed { i, title ->
             Pair(
@@ -90,6 +96,7 @@ fun Flashbacks(
                 "Day ${entry?.dayOfYear} of ${entry?.date?.year}",
                 entry,
             )
+            //todo extract string
         }).filter { it.second != null }
     else
         emptyList()) as List<Pair<String, DiaryEntry>> // This cast is not unchecked as .filter will remove null values
@@ -98,7 +105,7 @@ fun Flashbacks(
         Column(modifier = modifier) {
             Text(
                 modifier = Modifier.padding(start = 8.dp, end = 8.dp),
-                text = "Flashbacks",
+                text = stringResource(R.string.flashbacks),
                 style = MaterialTheme.typography.h4,
                 fontWeight = FontWeight.Bold
             )

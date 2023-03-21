@@ -13,11 +13,13 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import de.ptrlx.oneshot.R
 import de.ptrlx.oneshot.feature_diary.presentation.diary.DiaryEvent
 import de.ptrlx.oneshot.feature_diary.presentation.diary.DiaryViewModel
 import de.ptrlx.oneshot.feature_diary.presentation.diary.components.common.RoundedButton
@@ -75,7 +77,9 @@ fun SettingsButtons(
         ImportDatabaseButton(viewModel = viewModel)
         Spacer(modifier = Modifier.size(8.dp))
         RoundedButton(
-            text = "Export database",
+            text = stringResource(
+                R.string.export_db
+            ),
             onClick = { viewModel.onEvent(DiaryEvent.WriteDBExport) },
             arrow = false
         )
@@ -92,45 +96,42 @@ fun AboutText(modifier: Modifier = Modifier) {
 
     Column(modifier = modifier) {
         Text(
-            text = "Thank you for using OneShot!",
+            text = stringResource(R.string.thank_you_text),
             style = MaterialTheme.typography.h4
         )
         Spacer(modifier = Modifier.size(8.dp))
 
         Text(
-            text = "About",
+            text = stringResource(R.string.about),
             style = MaterialTheme.typography.h5,
             fontWeight = FontWeight.Bold
         )
         Text(
-            text = "OneShot is made to remind you of the special moments. Because every day has at least one. And that's what counts in life! So make it your habit and remember the happy days!",
+            text = stringResource(R.string.about_text),
             style = bodyStyle
         )
         Spacer(modifier = Modifier.size(8.dp))
 
         Text(
-            text = "Privacy",
+            text = stringResource(R.string.privacy),
             style = MaterialTheme.typography.h5,
             fontWeight = FontWeight.Bold
         )
         Text(
-            text = "Your data is yours! OneShot will not send data to any server without your consent. The app requires currently no internet permission.",
+            text = stringResource(R.string.privacy_text),
             style = bodyStyle
         )
         Spacer(modifier = Modifier.size(8.dp))
 
         Text(
-            text = "License",
+            text = stringResource(R.string.license),
             style = MaterialTheme.typography.h5,
             fontWeight = FontWeight.Bold
         )
-        val gitUrl = "https://github.com/ptrLx/OneShot"
+        val gitUrl = stringResource(R.string.git_url)
         val annotatedLicenseText = buildAnnotatedString {
-            append(
-                "This app is made with passion and love by ptrLx️. It is free software released under GPLv3 and comes with absolutely no warranty. "
-            )
-            append("Fork me on ")
-
+            append(stringResource(R.string.license_text))
+            append(" Fork me on ")
             withStyle(
                 style = SpanStyle(
                     color = MaterialTheme.colors.primary,
@@ -160,14 +161,12 @@ fun AboutText(modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.size(8.dp))
 
         Text(
-            text = "Open Source Licenses",
+            text = stringResource(R.string.open_source),
             style = MaterialTheme.typography.h5,
             fontWeight = FontWeight.Bold
         )
         Text(
-            text = "Coil - Apache License Version 2.0\n" +
-                    "Dagger - Apache License Version 2.0\n" +
-                    "Accompanist - Apache License Version 2.0",
+            text = stringResource(R.string.open_source_text),
             style = bodyStyle
         )
     }
@@ -202,7 +201,7 @@ fun ImportDatabaseButton(
 
     RoundedButton(
         modifier = modifier,
-        text = "Import database",
+        text = stringResource(R.string.btn_import_db),
         onClick = { launcher.launch(arrayOf("application/json")) },
         arrow = false
     )
@@ -216,12 +215,12 @@ fun ImportDatabaseButton(
                 },
                 title = {
                     Text(
-                        "Import database?",
+                        stringResource(R.string.qst_import_db),
                         style = MaterialTheme.typography.h5,
                         color = MaterialTheme.colors.error
                     )
                 },
-                text = { Text("This may overwrite entries in your current diary") },
+                text = { Text(stringResource(R.string.warn_import_db)) },
                 confirmButton = {
                     Button(
                         colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.error),
@@ -229,7 +228,7 @@ fun ImportDatabaseButton(
                             showDialog = false
                             viewModel.onEvent(DiaryEvent.ReadDBImport)
                         }) {
-                        Text("OK", color = MaterialTheme.colors.onError)
+                        Text(text = stringResource(R.string.btn_ok), color = MaterialTheme.colors.onError)
                     }
                 },
                 dismissButton = {
@@ -238,7 +237,7 @@ fun ImportDatabaseButton(
                         onClick = {
                             showDialog = false
                         }) {
-                        Text(text = "ABORT", color = MaterialTheme.colors.onBackground)
+                        Text(text = stringResource(R.string.btn_abort), color = MaterialTheme.colors.onBackground)
                     }
                 }
             )

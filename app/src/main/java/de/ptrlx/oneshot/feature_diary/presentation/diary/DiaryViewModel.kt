@@ -187,11 +187,12 @@ class DiaryViewModel @Inject constructor(
                         )
                         recentlyDeleteDiaryEntry = null
                     }
-                } else if (snackbarCause == SnackbarCause.SUCCESS) {
-                    // nothing to do here
-                } else if (snackbarCause == SnackbarCause.SUCCESS) {
-                    // nothing to do here
                 }
+//              else if (snackbarCause == SnackbarCause.SUCCESS) {
+//                  nothing to do here
+//              } else if (snackbarCause == SnackbarCause.ERROR) {
+//                  nothing to do here
+//              }
             }
             is DiaryEvent.WriteDBExport -> {
                 if (entries.isNotEmpty()) {
@@ -305,7 +306,7 @@ class DiaryViewModel @Inject constructor(
 
         val uri = copyImageUri?.let {
             fileManager?.copyImage(srcUri = copyImageUri, filename = filename)
-        }?: run {
+        } ?: run {
             fileManager?.createNewImageDummy(filename)
         }
 

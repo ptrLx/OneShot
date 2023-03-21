@@ -10,10 +10,12 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import de.ptrlx.oneshot.R
 
 /**
  * Composable for top of settings screen.
@@ -26,30 +28,35 @@ fun SettingsTop(
     modifier: Modifier = Modifier,
     controller: NavController
 ) {
-        Row(
-            modifier = modifier.fillMaxWidth().padding(top = 8.dp, bottom = 8.dp),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp, bottom = 8.dp),
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
 
-            Icon(
-                Icons.Default.ArrowBack, contentDescription = "back",
-                modifier = Modifier
-                    .size(50.dp).padding(end = 8.dp)
-                    .clickable {
-                        controller.navigate("home") {
-                            popUpTo(controller.graph.findStartDestination().id)
-                            launchSingleTop = true
-                        }
-                    },
-                tint = MaterialTheme.colors.onBackground
-            )
-            Text(
-                text = "Settings",
-                style = MaterialTheme.typography.h3,
-                fontWeight = FontWeight.Bold
-            )
+        Icon(
+            Icons.Default.ArrowBack, contentDescription = stringResource(
+                R.string.back
+            ),
+            modifier = Modifier
+                .size(50.dp)
+                .padding(end = 8.dp)
+                .clickable {
+                    controller.navigate("home") {
+                        popUpTo(controller.graph.findStartDestination().id)
+                        launchSingleTop = true
+                    }
+                },
+            tint = MaterialTheme.colors.onBackground
+        )
+        Text(
+            text = stringResource(R.string.settings),
+            style = MaterialTheme.typography.h3,
+            fontWeight = FontWeight.Bold
+        )
 
-        }
+    }
 
 }
