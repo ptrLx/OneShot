@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+    <string name="app_name">OneShot</string>
+    <string name="msg_set_base_location">Bitte Basisordner festlegen</string>
+    <string name="btn_capture_today">Heute aufnehmen</string>
+    <string name="delete">löschen</string>
+    <string name="done">fertig</string>
+    <string name="drag">ziehen</string>
+    <string name="desc_img_card">Eintrag: %1$s</string>
+    <string name="btn_import_img">Bild importieren</string>
+    <string name="msg_move_old_imgs">Alte Bilder müssen in den neuen Ordner kopiert werden</string>
+    <string name="btn_set_base_location">Basisordner festlegen</string>
+</resources>

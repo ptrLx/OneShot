@@ -7,6 +7,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import de.ptrlx.oneshot.R
 import de.ptrlx.oneshot.feature_diary.presentation.diary.DiaryEvent
 import de.ptrlx.oneshot.feature_diary.presentation.diary.DiaryViewModel
 
@@ -26,7 +28,7 @@ fun SetLocation(
                     val toast =
                         Toast.makeText(
                             context,
-                            "Please move old images manually to the new folder",
+                            context.getString(R.string.msg_move_old_imgs),
                             Toast.LENGTH_LONG
                         )
                     toast.show()
@@ -37,7 +39,7 @@ fun SetLocation(
 
     RoundedButton(
         modifier = modifier,
-        text = "Set image file path",
+        text = stringResource(R.string.btn_set_base_location),
         onClick = { launcher.launch(viewModel.fileManager?.baseLocation) },
         arrow = arrow
     )

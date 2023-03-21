@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -47,13 +48,13 @@ fun AddEntryButton(
 
     RoundedButton(
         modifier = modifier,
-        text = "Capture today",
+        text = stringResource(R.string.btn_capture_today),
         onClick = {
             viewModel.createNewImageDummy()?.let {
                 launcher.launch(it)
             } ?: run {
                 val toast =
-                    Toast.makeText(context, "Please set your base location path", Toast.LENGTH_LONG)
+                    Toast.makeText(context, context.getString(R.string.msg_set_base_location), Toast.LENGTH_LONG)
                 toast.show()
             }
         }
@@ -75,7 +76,7 @@ fun AddEditEntryModalBottomSheetContent(
         if (!viewModel.currentIsNewEntry)
             Icon(
                 Icons.Default.Delete,
-                contentDescription = "delete",
+                contentDescription = stringResource(R.string.delete),
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(16.dp)
@@ -87,7 +88,7 @@ fun AddEditEntryModalBottomSheetContent(
                     })
         Icon(
             Icons.Default.Done,
-            contentDescription = "done",
+            contentDescription = stringResource(R.string.done),
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(16.dp)
@@ -101,7 +102,7 @@ fun AddEditEntryModalBottomSheetContent(
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_baseline_drag_handle_24),
-                contentDescription = "drag"
+                contentDescription = stringResource(R.string.drag)
             )
 
             Spacer(modifier = Modifier.size(18.dp))
