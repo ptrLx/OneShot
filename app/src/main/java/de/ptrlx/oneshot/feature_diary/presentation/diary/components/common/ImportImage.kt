@@ -4,6 +4,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import de.ptrlx.oneshot.R
 import de.ptrlx.oneshot.feature_diary.presentation.diary.DiaryEvent
 import de.ptrlx.oneshot.feature_diary.presentation.diary.DiaryViewModel
 
@@ -22,7 +24,7 @@ fun ImportImageButton(
 
         RoundedButton(
             modifier = modifier,
-            text = "Import image",
+            text = stringResource(R.string.btn_import_img),
             onClick = {
                     launcher.launch("image/*")
             }

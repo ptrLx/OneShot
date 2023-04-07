@@ -11,6 +11,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
@@ -57,17 +58,17 @@ class MainActivity : ComponentActivity() {
                             BottomNavigationBar(
                                 items = listOf(
                                     BottomNavItem(
-                                        name = "Home",
+                                        name = stringResource(R.string.route_home),
                                         route = "home",
                                         painter = painterResource(id = R.drawable.ic_baseline_cottage_24)
                                     ),
                                     BottomNavItem(
-                                        name = "Diary",
+                                        name = stringResource(R.string.route_diary),
                                         route = "diary",
                                         painter = painterResource(id = R.drawable.ic_baseline_photo_library_24)
                                     ),
                                     BottomNavItem(
-                                        name = "Statistics",
+                                        name = stringResource(R.string.route_statistics),
                                         route = "stats",
                                         painter = painterResource(id = R.drawable.ic_baseline_leaderboard_24)
                                     ),
@@ -78,11 +79,12 @@ class MainActivity : ComponentActivity() {
 
                         ) { _ ->
                         if (viewModel.isSnackbarShowing) {
+                            val context = LocalContext.current
                             LaunchedEffect(viewModel.isSnackbarShowing) {
                                 try {
                                     when (scaffoldState.snackbarHostState.showSnackbar(
-                                        viewModel.snackbarCause.msg(),
-                                        actionLabel = viewModel.snackbarCause.actionLabel()
+                                        context.getString(viewModel.snackbarCause.msg()),
+                                        actionLabel = context.getString(viewModel.snackbarCause.actionLabel())
                                     )) {
                                         SnackbarResult.ActionPerformed -> {
                                             viewModel.onEvent(DiaryEvent.SnackbarDismissed)

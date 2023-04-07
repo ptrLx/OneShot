@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+    <string name="msg_set_base_location">Bitte Basisordner festlegen</string>
+    <string name="btn_capture_today">Kamara öffnen</string>
+    <string name="delete">löschen</string>
+    <string name="done">fertig</string>
+    <string name="drag">ziehen</string>
+    <string name="desc_img_card">Eintrag: %1$s</string>
+    <string name="btn_import_img">Bild importieren</string>
+    <string name="msg_move_old_imgs">Alte Bilder müssen manuell in den neuen Ordner kopiert werden</string>
+    <string name="btn_set_base_location">Basisordner festlegen</string>
+    <string name="route_home">Start</string>
+    <string name="route_diary">Tagebuch</string>
+    <string name="route_statistics">Statistiken</string>
+    <string name="flashbacks">Flashbacks</string>
+    <string name="days_ago_14">Vor 14 Tagen</string>
+    <string name="days_ago_7">Vor 7 Tagen</string>
+    <string name="last_very_happy_day">Letzter überglücklicher Tag</string>
+    <string name="yesterday">Gestern</string>
+    <string name="btn_abort">ABBRECHEN</string>
+    <string name="btn_ok">OK</string>
+    <string name="warn_import_db">Dies kann Einträge im aktuellen Tagebuch überschreiben</string>
+    <string name="qst_import_db">Datenbank importieren?</string>
+    <string name="btn_import_db">Datenbank importieren</string>
+    <string name="open_source">Open Source Lizenzen</string>
+    <string name="snackbar_msg_entry_deleted">Eintrag gelöscht!</string>
+    <string name="snackbar_msg_success">Erfolg!</string>
+    <string name="snackbar_msg_error">Fehler!</string>
+    <string name="snackbar_action_undo">RÜCKGÄNGIG</string>
+    <string name="snackbar_action_dismiss">VERSTANDEN</string>
+    <string name="last_28_days">Letzten 28 Tage</string>
+    <string name="back">zurück</string>
+    <string name="settings">Einstellungen</string>
+    <string name="export_db">Datenbank exportieren</string>
+    <string name="thank_you_text">Danke, dass du OneShot benutzt!</string>
+    <string name="about">Über</string>
+    <string name="privacy">Privatsphäre</string>
+    <string name="license">Lizenz</string>
+    <string name="license_text">Diese App wurde mit Leidenschaft und Liebe von ptrLx erstellt. Sie ist Freie Software unter der GPLv3-Lizenz und bietet keinerlei Garantie.</string>
+    <string name="privacy_text">Deine Daten sind deine! OneShot wird ohne deine Einwilligung niemals Daten zu irgendwelchen Server senden. Aktuell benötigt die App keine Internetberechtigung.</string>
+    <string name="about_text">OneShot wurde erstellt, um dich an die schönen Momente im Leben zu erinnern. Denn jeder Tag hat mindestens einen. Und das ist, was im Leben zählt! Also mach es zu deiner Gewohnheit und behalte die glücklichen Tage in Erinnerung!</string>
+</resources>

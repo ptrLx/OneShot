@@ -18,16 +18,16 @@ enum class HappinessType {
         }
     }
 
-    fun describe(): String {
-        return when (this) {
-            VERY_HAPPY -> "very happy"
-            HAPPY -> "happy"
-            NEUTRAL -> "neutral"
-            SAD -> "sad"
-            VERY_SAD -> "very sad"
-            NOT_SPECIFIED -> ""
-        }
-    }
+//    fun describe(): String {
+//        return when (this) {
+//            VERY_HAPPY -> "very happy"
+//            HAPPY -> "happy"
+//            NEUTRAL -> "neutral"
+//            SAD -> "sad"
+//            VERY_SAD -> "very sad"
+//            NOT_SPECIFIED -> ""
+//        }
+//    }
 
     fun progress(): Float {
         return when (this) {

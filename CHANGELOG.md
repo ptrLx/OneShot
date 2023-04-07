@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.1] - 2023-04-08
+
+### New features
+
+* German translation
+
+### Bug fixes
+
+* [#5] Image preview too dark: Removed gradient in large image view
+
 ## [1.1.0] - 2023-03-15
 
 ### New features

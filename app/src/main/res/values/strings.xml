@@ -1,3 +1,45 @@
 <resources>
-    <string name="app_name">OneShot</string>
+    <string name="app_name" translatable="false">OneShot</string>
+    <string name="msg_set_base_location">Please set your base location path</string>
+    <string name="btn_capture_today">Capture today</string>
+    <string name="delete">delete</string>
+    <string name="done">done</string>
+    <string name="drag">drag</string>
+    <string name="desc_img_card">Diary entry: %1$s</string>
+    <string name="btn_import_img">Import image</string>
+    <string name="msg_move_old_imgs">Please move old images manually to the new folder</string>
+    <string name="btn_set_base_location">Set image file path</string>
+    <string name="route_home">Home</string>
+    <string name="route_diary">Diary</string>
+    <string name="route_statistics">Statistics</string>
+    <string name="snackbar_msg_entry_deleted">Entry deleted!</string>
+    <string name="snackbar_msg_success">Success!</string>
+    <string name="snackbar_msg_error">Error!</string>
+    <string name="snackbar_action_undo">UNDO</string>
+    <string name="snackbar_action_dismiss">DISMISS</string>
+    <string name="last_28_days">Last 28 days</string>
+    <string name="back">back</string>
+    <string name="settings">Settings</string>
+    <string name="export_db">Export database</string>
+    <string name="thank_you_text">Thank you for using OneShot!</string>
+    <string name="about">About</string>
+    <string name="about_text">OneShot is made to remind you of the special moments. Because every day has at least one. And that\'s what counts in life! So make it your habit and remember the happy days!</string>
+    <string name="privacy">Privacy</string>
+    <string name="privacy_text">Your data is yours! OneShot will not send data to any server without your consent. The app requires currently no internet permission.</string>
+    <string name="license">License</string>
+    <string name="license_text">"This app is made with passion and love by ptrLx. It is free software released under GPLv3 and comes with absolutely no warranty."</string>
+    <string name="git_url" translatable="false">https://github.com/ptrLx/OneShot</string>
+    <string name="open_source">Open Source Licenses</string>
+    <string name="open_source_text" translatable="false">Coil - Apache License Version 2.0\nDagger - Apache License Version 2.0\nAccompanist - Apache License Version 2.0</string>
+    <string name="btn_import_db">Import database</string>
+    <string name="qst_import_db">Import database?</string>
+    <string name="warn_import_db">This may overwrite entries in your current diary</string>
+    <string name="btn_ok">OK</string>
+    <string name="btn_abort">ABORT</string>
+    <string name="app_slogan" translatable="false">Remember the happy days!</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="last_very_happy_day">Last very happy day</string>
+    <string name="days_ago_7">7 days ago</string>
+    <string name="days_ago_14">14 days ago</string>
+    <string name="flashbacks">Flashbacks</string>
 </resources>

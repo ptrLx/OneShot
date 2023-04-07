@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,7 +31,6 @@ fun ImageCard(
     description: String,
     expandOnClick: Boolean = false
 ) {
-    val contentDescription = "Diary entry: $description"
     var expanded by remember { mutableStateOf(false) }
 
     Card(
@@ -55,46 +55,47 @@ fun ImageCard(
             AsyncImage(
                 modifier = Modifier.fillMaxWidth(),
                 model = viewModel.fileManager?.resolveUri(entry.relativePath),
-                contentDescription = contentDescription,
+                contentDescription = stringResource(R.string.desc_img_card, description),
                 error = painterResource(R.drawable.ic_baseline_error_24),
                 contentScale = if (!expanded) ContentScale.Crop else ContentScale.FillWidth,
             )
-//            }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.Black
-                            ),
-                            startY = 300f
+            if (!expanded) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    Color.Black
+                                ),
+                                startY = 300f
+                            )
                         )
-                    )
-            )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(12.dp),
-                contentAlignment = Alignment.BottomStart
-            ) {
-                Text(
-                    description,
-                    style = TextStyle(color = Color.White, fontSize = 16.sp),
-                    fontWeight = FontWeight.Bold
                 )
-            }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(12.dp),
-                contentAlignment = Alignment.BottomEnd
-            ) {
-                Text(entry.happiness.emoticon(), style = TextStyle(fontSize = 16.sp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(12.dp),
+                    contentAlignment = Alignment.BottomStart
+                ) {
+                    Text(
+                        description,
+                        style = TextStyle(color = Color.White, fontSize = 16.sp),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(12.dp),
+                    contentAlignment = Alignment.BottomEnd
+                ) {
+                    Text(entry.happiness.emoticon(), style = TextStyle(fontSize = 16.sp))
+                }
             }
         }
     }

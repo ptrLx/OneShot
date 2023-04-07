@@ -15,9 +15,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.ptrlx.oneshot.R
 import de.ptrlx.oneshot.feature_diary.domain.util.HappinessType
 import de.ptrlx.oneshot.feature_diary.presentation.diary.DiaryEvent
 import de.ptrlx.oneshot.feature_diary.presentation.diary.DiaryViewModel
@@ -70,6 +72,7 @@ fun StreakCount(
                     ",\nHappiness-Streak of $happinessStreakCount days"
                 else ""
             }\uD83C\uDF89",
+            //todo extract string
             style = MaterialTheme.typography.h5,
             color = MaterialTheme.colors.primary,
             fontWeight = FontWeight.Bold
@@ -88,7 +91,9 @@ fun StreakCalendar(
     ) {
         Text(
             modifier = Modifier.padding(8.dp),
-            text = "Last 28 days",
+            text = stringResource(
+                R.string.last_28_days
+            ),
             style = MaterialTheme.typography.h4,
             fontWeight = FontWeight.Bold
         )
@@ -162,7 +167,9 @@ fun HappinessCalendarEntry(
                 color = onColor
             )
             Text(
-                fontSize = 30.sp, color = onColor, text = (entry?.happiness ?: run { HappinessType.NOT_SPECIFIED }).emoticon()
+                fontSize = 30.sp,
+                color = onColor,
+                text = (entry?.happiness ?: run { HappinessType.NOT_SPECIFIED }).emoticon()
             )
         }
     }

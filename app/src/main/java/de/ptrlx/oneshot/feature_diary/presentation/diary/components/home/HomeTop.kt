@@ -10,9 +10,11 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import de.ptrlx.oneshot.R
 
 /**
  * Composable for top of home screen.
@@ -36,13 +38,13 @@ fun HomeTop(
         ) {
 
             Text(
-                text = "OneShot",
+                text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.h3,
                 fontWeight = FontWeight.Bold
             )
 
             Icon(
-                Icons.Default.Settings, contentDescription = "Settings",
+                Icons.Default.Settings, contentDescription = stringResource(R.string.settings) ,
                 modifier = Modifier
                     .size(30.dp)
                     .clickable {
@@ -55,7 +57,7 @@ fun HomeTop(
         }
 
         Text(
-            text = "Remember the happy days!",
+            text = stringResource(R.string.app_slogan),
             style = MaterialTheme.typography.body1
         )
     }
