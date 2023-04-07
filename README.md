@@ -35,6 +35,13 @@ It stores your photos in a local folder and your diary within the app. Import an
 
 Thank's to [@Cynog](https://github.com/Cynog) for providing the beautiful images in the screenshots!
 
+## Translation
+
+OneShot is currently available in following languages:
+
+* English
+* German
+
 ## Privacy
 
 Your data is yours!
