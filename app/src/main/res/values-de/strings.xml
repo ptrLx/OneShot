@@ -38,6 +38,6 @@
     <string name="privacy">Privatsphäre</string>
     <string name="license">Lizenz</string>
     <string name="license_text">Diese App wurde mit Leidenschaft und Liebe von ptrLx erstellt. Sie ist Freie Software unter der GPLv3-Lizenz und bietet keinerlei Garantie.</string>
-    <string name="privacy_text">Deine Daten sind deine! OneShot wird ohne deine Einwilligung niemals Daten zu irgendwelchen Server senden. Aktuell benötigt die App keine Internetberechtigung.</string>
+    <string name="privacy_text">Deine Daten sind deine! OneShot wird niemals Daten an irgendwelche Server senden, solange du dem nicht zustimmst. Aktuell benötigt die App keine Internetberechtigung.</string>
     <string name="about_text">OneShot wurde erstellt, um dich an die schönen Momente im Leben zu erinnern. Denn jeder Tag hat mindestens einen. Und das ist, was im Leben zählt! Also mach es zu deiner Gewohnheit und behalte die glücklichen Tage in Erinnerung!</string>
 </resources>
