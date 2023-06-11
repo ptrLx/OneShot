@@ -1,4 +1,13 @@
-<h1> <img src="logo/v1/OneShot_709x709.svg"
+<h1 align="center">
+    <br>
+    <img width="70" src="logo/v1/logo_709.svg" alt="App icon" />
+    <br>
+    OneShot
+    <br>
+</h1>
+
+
+<!-- <h1> <img src="logo/v1/logo_709.svg"
   width="128"
   height="128"
   style="float:left;">
@@ -11,7 +20,17 @@
 
 <br>
 
-OneShot is made to remind you of the special moments. Because every day has at least one. And that's what counts in life! So make it your habit and remember the happy days!
+ -->
+
+![developed in Kotlin](https://img.shields.io/badge/developed%20in-Kotlin-blue.svg) ![built in Android Studio](https://img.shields.io/badge/built%20in-Android%20Studio-green.svg)
+
+OneShot is made to remind you of the special moments. Because every day has at least one. And that's what counts in life! So make it your habit and **remember the happy days!**
+
+---
+
+## Downloads
+
+[<img src="https://gitlab.com/fdroid/artwork/-/raw/master/badge/get-it-on.png" width="200px"></img>](https://f-droid.org/it/packages/de.ptrlx.oneshot/)
 
 ## Features
 
