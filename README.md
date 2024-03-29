@@ -6,7 +6,6 @@
     <br>
 </h1>
 
-
 <!-- <h1> <img src="logo/v1/logo_709.svg"
   width="128"
   height="128"
@@ -30,7 +29,9 @@ OneShot is made to remind you of the special moments. Because every day has at l
 
 ## Downloads
 
-[<img src="https://gitlab.com/fdroid/artwork/-/raw/master/badge/get-it-on.png" width="200px"></img>](https://f-droid.org/it/packages/de.ptrlx.oneshot/)
+[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
+    alt="Get it on F-Droid"
+    height="80">](https://f-droid.org/packages/de.ptrlx.oneshot)
 
 ## Features
 
