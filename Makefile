@@ -48,3 +48,10 @@ ci-apk:  ## Download the APKs of the latest successful CI run of the current bra
 	gh run download -R $(REPO) -n apks -D $(APK_DIR) \
 	  $$(gh run list -R $(REPO) --workflow ci.yml --branch $(BRANCH) --status success --limit 1 --json databaseId --jq '.[0].databaseId')
 	@find $(APK_DIR) -name '*.apk'
+
+##@ Branding (needs Docker)
+
+.PHONY: logo
+logo:  ## Regenerate logo v2, launcher icons and the store icon (node:22-alpine + rsvg-convert)
+	docker run --rm -v "$(CURDIR)":/src -w /src node:22-alpine \
+	  sh -c 'scripts/logo/render.sh && chown -R $(shell id -u):$(shell id -g) logo app/src/main/res fastlane/metadata/android/en-US/images'
