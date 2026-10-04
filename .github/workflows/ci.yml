@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  # JDK of the current toolchain (AGP 7.3 / Gradle 7.4), the same major the F-Droid buildserver used
+  # for v1.1.1 (Debian bullseye). The F-Droid buildserver now runs Debian trixie with OpenJDK 21, which
+  # Gradle 7.4 cannot run on: the toolchain upgrade (#26) moves both jobs below to trixie + JDK 21.
+  JAVA_VERSION: '11'
+
+jobs:
+  fdroid-metadata:
+    name: F-Droid metadata
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: scripts/ci/check-fdroid-metadata.sh
+
+  build:
+    name: Build, unit tests, APK checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: gradle/actions/wrapper-validation@v6
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+      - name: Build and unit test
+        run: ./gradlew --no-daemon assembleDebug assembleRelease testDebugUnitTest
+      - name: Room schema freeze
+        run: scripts/ci/check-schema-freeze.sh
+      - name: APK checks
+        run: scripts/ci/check-apk.sh app/build/outputs/apk/release/app-release-unsigned.apk
+      - uses: actions/upload-artifact@v7
+        with:
+          name: apks
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/release/app-release-unsigned.apk
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: reports
+          path: app/build/reports/
+
+  reproducible:
+    # F-Droid rebuilds every release from source on Debian with Debian's OpenJDK and only publishes
+    # our signed OneShot.apk if its own build is identical. Prove that on every change.
+    name: Reproducible (F-Droid-like Debian build)
+    needs: build
+    runs-on: ubuntu-latest
+    container:
+      image: debian:bullseye
+      volumes:
+        - /usr/local/lib/android/sdk:/opt/android-sdk
+    env:
+      ANDROID_HOME: /opt/android-sdk
+    steps:
+      - name: Install Debian JDK
+        run: |
+          . /etc/os-release
+          if [ "$VERSION_CODENAME" = bullseye ]; then
+            # Debian 11 left LTS in 2026: its packages are served from archive.debian.org now.
+            printf '%s\n' \
+              'deb http://archive.debian.org/debian bullseye main' \
+              'deb http://archive.debian.org/debian bullseye-updates main' \
+              'deb http://archive.debian.org/debian-security bullseye-security main' > /etc/apt/sources.list
+          fi
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends openjdk-11-jdk-headless git ca-certificates unzip >/dev/null
+      - uses: actions/checkout@v7
+      - name: Build unsigned release like F-Droid
+        run: ./gradlew --no-daemon assembleRelease
+      - uses: actions/download-artifact@v8
+        with:
+          name: apks
+          path: runner-build
+      - name: Compare with the runner build
+        run: scripts/ci/compare-apks.sh runner-build/release/app-release-unsigned.apk app/build/outputs/apk/release/app-release-unsigned.apk

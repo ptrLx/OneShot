@@ -1,0 +1,32 @@
+name: Data contract
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: Data-contract guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Check data-contract paths
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'data-change-approved') }}
+        run: |
+          set +e
+          scripts/ci/check-data-contract.sh "$BASE" "$HEAD"
+          status=$?
+          set -e
+          if [ "$status" = 2 ] && [ "$APPROVED" != true ]; then
+            echo "::error::This PR touches persisted-data code. Add a migration/compatibility plan (docs/modernization/DATA_CONTRACT.md) and the 'data-change-approved' label."
+            exit 1
+          fi
+          exit $(( status == 2 ? 0 : status ))

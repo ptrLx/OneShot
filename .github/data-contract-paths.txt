@@ -1,0 +1,15 @@
+# Paths whose changes can affect data on users' phones (Room DB, DataStore, image files, JSON export).
+# A pull request touching any of them needs the `data-change-approved` label, a compatibility or migration
+# plan and green data tests. See docs/modernization/DATA_CONTRACT.md. One git pathspec per line.
+app/db-schema/
+app/src/main/java/de/ptrlx/oneshot/feature_diary/domain/model/
+app/src/main/java/de/ptrlx/oneshot/feature_diary/data/
+app/src/main/java/de/ptrlx/oneshot/feature_diary/domain/util/DiaryFileManager.kt
+app/src/main/java/de/ptrlx/oneshot/feature_diary/domain/util/HappinessType.kt
+app/src/main/java/de/ptrlx/oneshot/feature_diary/domain/util/SettingsKeyDefinitions.kt
+app/src/main/java/de/ptrlx/oneshot/feature_diary/domain/use_case/diary_entry/CreateUpdateDiaryEntryUseCase.kt
+app/src/main/java/de/ptrlx/oneshot/feature_diary/presentation/diary/DiaryViewModel.kt
+app/src/main/java/de/ptrlx/oneshot/di/AppModule.kt
+app/src/main/AndroidManifest.xml
+app/src/main/res/xml/backup_rules.xml
+app/src/main/res/xml/data_extraction_rules.xml

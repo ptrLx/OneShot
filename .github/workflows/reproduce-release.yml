@@ -1,0 +1,70 @@
+name: Reproduce release
+
+# Rebuild a published release from source in an F-Droid-like Debian container and verify that
+# the published OneShot.apk is exactly that build plus a signature (what F-Droid checks).
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: Repository that published the release
+        default: ptrLx/OneShot
+      tag:
+        description: Release tag (where OneShot.apk is published)
+        default: v1.1.1
+      ref:
+        description: Commit to build, as in the F-Droid recipe (empty = the tag)
+        # The v1.1.1 tag points to 319fba1, F-Droid built a3f3b35 (adds the baseline profile sort fix).
+        default: a3f3b358fe56ac73b25b7810595004d7a7ba2140
+      image:
+        description: Debian image used by the F-Droid buildserver for this release
+        default: debian:bullseye
+      jdk:
+        description: Debian OpenJDK major version
+        default: '11'
+  pull_request:
+    paths:
+      - .github/workflows/reproduce-release.yml
+
+permissions:
+  contents: read
+
+jobs:
+  reproduce:
+    name: Reproduce ${{ inputs.repository || 'ptrLx/OneShot' }}@${{ inputs.tag || 'v1.1.1' }}
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ inputs.image || 'debian:bullseye' }}
+      volumes:
+        - /usr/local/lib/android/sdk:/opt/android-sdk
+    env:
+      ANDROID_HOME: /opt/android-sdk
+      REPO: ${{ inputs.repository || 'ptrLx/OneShot' }}
+      TAG: ${{ inputs.tag || 'v1.1.1' }}
+      REF: ${{ github.event_name == 'workflow_dispatch' && (inputs.ref || inputs.tag) || 'a3f3b358fe56ac73b25b7810595004d7a7ba2140' }}
+    steps:
+      - name: Install Debian JDK and apksigcopier
+        run: |
+          . /etc/os-release
+          if [ "$VERSION_CODENAME" = bullseye ]; then
+            # Debian 11 left LTS in 2026: its packages are served from archive.debian.org now.
+            printf '%s\n' \
+              'deb http://archive.debian.org/debian bullseye main' \
+              'deb http://archive.debian.org/debian bullseye-updates main' \
+              'deb http://archive.debian.org/debian-security bullseye-security main' > /etc/apt/sources.list
+          fi
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends openjdk-${{ inputs.jdk || '11' }}-jdk-headless git ca-certificates unzip curl python3-pip >/dev/null
+          pip3 install --quiet apksigcopier
+      - uses: actions/checkout@v7
+        with:
+          repository: ${{ env.REPO }}
+          ref: ${{ env.REF }}
+      - name: Build unsigned release like F-Droid
+        run: ./gradlew --no-daemon assembleRelease
+      - name: Compare with the published OneShot.apk
+        run: |
+          curl -fsSL -o OneShot.apk "https://github.com/$REPO/releases/download/$TAG/OneShot.apk"
+          # apksigcopier verifies with apksigner from the SDK build-tools
+          export PATH="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1):$PATH"
+          apksigcopier compare OneShot.apk --unsigned app/build/outputs/apk/release/app-release-unsigned.apk
+          echo "$REPO@$REF reproduces the OneShot.apk published at $TAG"
