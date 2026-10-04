@@ -54,65 +54,16 @@ jobs:
           git push
 
   build-apk:
-    name: Build and sign OneShot.apk (F-Droid-like)
+    name: Build and sign OneShot.apk
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
-    runs-on: ubuntu-latest
-    # Same environment as the CI reproducibility job, so F-Droid's rebuild matches byte for byte.
+    # Unsigned F-Droid-like build, then signing in the protected `release` environment.
     # The F-Droid buildserver now uses debian:trixie + OpenJDK 21: switched together with #26.
-    container:
+    uses: ./.github/workflows/sign-release.yml
+    with:
+      ref: ${{ needs.release-please.outputs.tag_name }}
       image: debian:bullseye
-      volumes:
-        - /usr/local/lib/android/sdk:/opt/android-sdk
-    env:
-      ANDROID_HOME: /opt/android-sdk
-    steps:
-      - name: Install Debian JDK and apksigcopier
-        run: |
-          . /etc/os-release
-          if [ "$VERSION_CODENAME" = bullseye ]; then
-            # Debian 11 left LTS in 2026: its packages are served from archive.debian.org now.
-            printf '%s\n' \
-              'deb http://archive.debian.org/debian bullseye main' \
-              'deb http://archive.debian.org/debian bullseye-updates main' \
-              'deb http://archive.debian.org/debian-security bullseye-security main' > /etc/apt/sources.list
-          fi
-          apt-get update -qq
-          apt-get install -y -qq --no-install-recommends openjdk-11-jdk-headless git ca-certificates unzip python3-pip >/dev/null
-          pip3 install --quiet apksigcopier
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.release-please.outputs.tag_name }}
-      - name: Verify versionCode matches the tag
-        run: scripts/release/sync_version.py --check
-      - name: Build unsigned release like F-Droid
-        run: ./gradlew --no-daemon assembleRelease
-      - name: Sign
-        env:
-          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        run: |
-          if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "::error::RELEASE_KEYSTORE_BASE64 is not set. F-Droid only accepts OneShot.apk signed with the original key (AllowedAPKSigningKeys)."
-            exit 1
-          fi
-          unsigned=app/build/outputs/apk/release/app-release-unsigned.apk
-          apksigner=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)/apksigner
-          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
-          # No zipalign: F-Droid copies this signature onto its own unsigned build, so the
-          # signed APK must contain exactly the unsigned build's bytes.
-          "$apksigner" sign --ks "$RUNNER_TEMP/release.jks" --ks-pass env:KEYSTORE_PASSWORD \
-            --ks-key-alias "$KEY_ALIAS" --key-pass env:KEY_PASSWORD --out OneShot.apk "$unsigned"
-          rm -f "$RUNNER_TEMP/release.jks"
-          "$apksigner" verify --print-certs OneShot.apk | grep -i 'SHA-256 digest'
-          PATH="$(dirname "$apksigner"):$PATH" apksigcopier compare OneShot.apk --unsigned "$unsigned"
-      - uses: actions/upload-artifact@v7
-        with:
-          name: OneShot-release
-          path: OneShot.apk
-          if-no-files-found: error
+      jdk: '11'
 
   publish-apk:
     name: Attach OneShot.apk to the release

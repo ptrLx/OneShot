@@ -1,0 +1,142 @@
+name: Signed release APK
+
+# Builds the release APK exactly like F-Droid and signs it with the release key.
+#
+# The key lives only in the protected `release` environment (see docs/modernization/RELEASING.md).
+# The build job never sees it, and the signing job never checks out or runs repository code: it
+# only signs the unsigned APK handed over as an artifact. A compromised build script or Gradle
+# plugin therefore cannot read the key.
+#
+# Called by release.yml for every release. Run it manually for a signing rehearsal: it produces
+# a signed OneShot.apk artifact but publishes nothing.
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Tag to build
+        required: true
+        type: string
+      image:
+        type: string
+        default: debian:bullseye
+      jdk:
+        type: string
+        default: '11'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Tag, branch or commit to build and sign (rehearsal, nothing is published)
+        required: true
+        default: master
+      image:
+        description: Debian image of the F-Droid buildserver for this code
+        default: debian:bullseye
+      jdk:
+        description: Debian OpenJDK major version
+        default: '11'
+
+permissions:
+  contents: read
+
+env:
+  UNSIGNED_APK: app/build/outputs/apk/release/app-release-unsigned.apk
+
+jobs:
+  build:
+    name: Build unsigned release (F-Droid-like)
+    runs-on: ubuntu-latest
+    # Same environment as the CI reproducibility job, so F-Droid's rebuild matches byte for byte.
+    container:
+      image: ${{ inputs.image }}
+      volumes:
+        - /usr/local/lib/android/sdk:/opt/android-sdk
+    env:
+      ANDROID_HOME: /opt/android-sdk
+    steps:
+      - name: Install Debian JDK
+        run: |
+          . /etc/os-release
+          if [ "$VERSION_CODENAME" = bullseye ]; then
+            # Debian 11 left LTS in 2026: its packages are served from archive.debian.org now.
+            printf '%s\n' \
+              'deb http://archive.debian.org/debian bullseye main' \
+              'deb http://archive.debian.org/debian bullseye-updates main' \
+              'deb http://archive.debian.org/debian-security bullseye-security main' > /etc/apt/sources.list
+          fi
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends openjdk-${{ inputs.jdk }}-jdk-headless git ca-certificates unzip python3 >/dev/null
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - name: Verify versionCode matches the tag
+        if: startsWith(inputs.ref, 'v')
+        run: scripts/release/sync_version.py --check
+      - name: Build unsigned release like F-Droid
+        run: ./gradlew --no-daemon assembleRelease
+      - name: APK checks
+        run: scripts/ci/check-apk.sh "$UNSIGNED_APK"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: OneShot-unsigned
+          path: ${{ env.UNSIGNED_APK }}
+          if-no-files-found: error
+
+  sign:
+    name: Sign OneShot.apk
+    needs: build
+    runs-on: ubuntu-latest
+    # Holds the release key. Protect it with required reviewers and a master-only branch policy.
+    environment: release
+    env:
+      # Fingerprint F-Droid accepts (AllowedAPKSigningKeys). A test key can override it through
+      # the `release` environment variable RELEASE_CERT_SHA256.
+      EXPECTED_CERT_SHA256: ${{ vars.RELEASE_CERT_SHA256 || '511c8933704278f936183c54ef963b9b66a0f6c232adca17bb52090f62b80456' }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: OneShot-unsigned
+          path: unsigned
+      - name: Install apksigcopier
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet apksigcopier
+          echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
+          # apksigcopier verifies with apksigner from the SDK build-tools
+          ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1 >> "$GITHUB_PATH"
+      - name: Sign
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::RELEASE_KEYSTORE_BASE64 is not set in the 'release' environment. F-Droid only accepts OneShot.apk signed with the original key (AllowedAPKSigningKeys)."
+            exit 1
+          fi
+          keystore="$RUNNER_TEMP/release.keystore"
+          trap 'rm -f "$keystore"' EXIT
+          echo "$KEYSTORE_BASE64" | base64 -d > "$keystore"
+          # No zipalign: F-Droid copies this signature onto its own unsigned build, so the
+          # signed APK must contain exactly the unsigned build's bytes.
+          apksigner sign --ks "$keystore" --ks-pass env:KEYSTORE_PASSWORD \
+            --ks-key-alias "$KEY_ALIAS" --key-pass env:KEY_PASSWORD \
+            --out OneShot.apk unsigned/app-release-unsigned.apk
+      - name: Verify signer is the F-Droid key
+        run: |
+          certs=$(apksigner verify --print-certs OneShot.apk)
+          signers=$(grep -c '^Signer #[0-9]* certificate SHA-256 digest:' <<<"$certs" || true)
+          actual=$(sed -nE 's/^Signer #1 certificate SHA-256 digest: ([0-9a-f]+)$/\1/p' <<<"$certs")
+          echo "Signer certificate SHA-256: $actual"
+          if [ "$signers" != 1 ] || [ "$actual" != "$EXPECTED_CERT_SHA256" ]; then
+            echo "::error::OneShot.apk must have exactly one signer with certificate SHA-256 $EXPECTED_CERT_SHA256 (found $signers signer(s), first: $actual). Wrong keystore or alias?"
+            exit 1
+          fi
+      - name: Verify F-Droid can transplant the signature
+        run: apksigcopier compare OneShot.apk --unsigned unsigned/app-release-unsigned.apk
+      - uses: actions/upload-artifact@v7
+        with:
+          name: OneShot-release
+          path: OneShot.apk
+          if-no-files-found: error

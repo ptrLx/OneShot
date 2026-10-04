@@ -49,6 +49,22 @@ ci-apk:  ## Download the APKs of the latest successful CI run of the current bra
 	  $$(gh run list -R $(REPO) --workflow ci.yml --branch $(BRANCH) --status success --limit 1 --json databaseId --jq '.[0].databaseId')
 	@find $(APK_DIR) -name '*.apk'
 
+##@ Releases (needs the gh CLI and the `release` environment)
+
+REF ?= master
+IMAGE ?= debian:bullseye
+JDK ?= 11
+
+.PHONY: release-rehearsal release-rehearsal-apk
+release-rehearsal:  ## Build and sign REF with the release key without publishing (approve the run in the Actions tab)
+	gh workflow run sign-release.yml -R $(REPO) --ref master -f ref=$(REF) -f image=$(IMAGE) -f jdk=$(JDK)
+
+release-rehearsal-apk:  ## Download the signed OneShot.apk of the latest successful rehearsal into build/release
+	rm -rf build/release
+	gh run download -R $(REPO) -n OneShot-release -D build/release \
+	  $$(gh run list -R $(REPO) --workflow sign-release.yml --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+	@ls -l build/release/OneShot.apk
+
 ##@ Branding (needs Docker)
 
 .PHONY: logo

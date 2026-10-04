@@ -41,19 +41,33 @@ What this means for us:
 |---|---|---|
 | Pull request | debug APK + unsigned release APK as workflow artifacts | debug key / none |
 | Push to `master` (nightly) | same artifacts for every master commit | debug key / none |
-| Release PR merged (upstream) | `OneShot.apk` attached to the GitHub release `vX.Y.Z` | upstream release key from repository secrets |
+| Release PR merged (upstream) | `OneShot.apk` attached to the GitHub release `vX.Y.Z` | upstream release key from the `release` environment |
+| Manual run of `sign-release.yml` (rehearsal) | signed `OneShot.apk` as a workflow artifact, nothing published | upstream release key from the `release` environment |
 
-The release APK is built in the same Debian container and JDK as the CI reproducibility job (which mirrors the F-Droid buildserver), signed with `apksigner` without zipalign (F-Droid must be able to transplant the signature onto its own build), checked with `apksigcopier compare` and uploaded under the fixed asset name `OneShot.apk`. `reproduce-release.yml` can re-verify any published release from source.
+The release APK is built by the reusable workflow `sign-release.yml` in two jobs. The **build** job uses the same Debian container and JDK as the CI reproducibility job (which mirrors the F-Droid buildserver), checks versionCode against the tag and runs the APK checks; it has no access to the key. The **sign** job runs in the protected `release` environment, never checks out or runs repository code, signs the unsigned artifact with `apksigner` without zipalign (F-Droid must be able to transplant the signature onto its own build), fails unless the APK has exactly one signer whose certificate SHA-256 is the `AllowedAPKSigningKeys` value, and checks the transplant with `apksigcopier compare`. `release.yml` then uploads the APK under the fixed asset name `OneShot.apk`. `reproduce-release.yml` can re-verify any published release from source.
 
-## Secrets (upstream repository only)
+## Signing setup (`release` environment)
 
-| Secret | Purpose |
-|---|---|
-| `RELEASE_KEYSTORE_BASE64` | base64 of the keystore holding the key behind `AllowedAPKSigningKeys` |
-| `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD` | keystore access |
-| `RELEASE_PLEASE_TOKEN` (optional) | fine-grained PAT (contents and pull requests: write) so CI runs on release PRs; PRs opened with the default token do not trigger workflows |
+The release key is stored only as secrets of a GitHub **environment** named `release` (Settings, Environments), never as repository secrets, so no other workflow or job can read it.
 
-The fork has no release key. Release PRs in the fork are only used to validate the automation and are not merged.
+| Name | Kind | Purpose |
+|---|---|---|
+| `RELEASE_KEYSTORE_BASE64` | environment secret | `base64 -w0` of the keystore (JKS or PKCS12) holding the key behind `AllowedAPKSigningKeys` |
+| `RELEASE_KEYSTORE_PASSWORD` | environment secret | keystore password |
+| `RELEASE_KEY_ALIAS` | environment secret | alias of the signing key |
+| `RELEASE_KEY_PASSWORD` | environment secret | key password (same as the keystore password for PKCS12) |
+| `RELEASE_CERT_SHA256` | environment variable, optional | expected signer certificate SHA-256; only needed for a test key, defaults to `511c8933…0456` |
+| `RELEASE_PLEASE_TOKEN` | repository secret, optional | fine-grained PAT (contents and pull requests: write) so CI runs on release PRs; PRs opened with the default token do not trigger workflows |
+
+Protection rules for the `release` environment:
+
+- **Required reviewers:** the maintainer. Every signing run waits for approval, so nothing gets signed unnoticed. Approve promptly after merging a release PR: F-Droid may try to build as soon as it sees the tag, and fails while `OneShot.apk` is missing.
+- **Deployment branches and tags:** selected branches, `master` only. Release builds run from `master` (`release.yml` builds the tag that release-please just created), so other branches can never reach the key.
+- No wait timer, admins not allowed to bypass.
+
+Check the key locally before storing it: `keytool -list -v -keystore <file>` must show the alias with certificate SHA-256 `51:1C:89:33:…:04:56`.
+
+**Rehearsal:** start `sign-release.yml` manually from `master` (`make release-rehearsal`, optionally `REF=<tag or commit>`), approve the run, and download the signed `OneShot.apk` artifact. It proves that the secrets, the alias and the fingerprint are right without creating a release. The fork has no release key; its release PRs only validate the automation and are not merged.
 
 ## Rules that keep F-Droid green
 
@@ -65,4 +79,4 @@ The fork has no release key. Release PRs in the fork are only used to validate t
 
 ## Upstream handover
 
-Tracked in #19: add the secrets, enable Actions and "Allow GitHub Actions to create pull requests", set squash-only merges with the PR title as commit message, merge the fork's `master`, let release-please open the first release PR, merge it, and verify the published `OneShot.apk` with `reproduce-release.yml` before F-Droid picks it up.
+Tracked in #19: create the `release` environment with its secrets and protection rules (see above) and run a signing rehearsal, enable Actions and "Allow GitHub Actions to create pull requests", set squash-only merges with the PR title as commit message, merge the fork's `master`, let release-please open the first release PR, merge it, and verify the published `OneShot.apk` with `reproduce-release.yml` before F-Droid picks it up.
