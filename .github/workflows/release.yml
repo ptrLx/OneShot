@@ -1,0 +1,131 @@
+name: Release
+
+# release-please keeps a release PR open (versionName, CHANGELOG.md). This workflow adds what the
+# F-Droid flow needs to that PR (versionCode, fastlane changelog). Merging the PR tags vX.Y.Z and
+# publishes OneShot.apk, which F-Droid compares against its own reproducible build.
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      pr: ${{ steps.release.outputs.pr }}
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@v5
+        with:
+          # PRs opened with GITHUB_TOKEN do not trigger CI. A fine-grained PAT (contents + pull
+          # requests: write) in RELEASE_PLEASE_TOKEN makes CI run on the release PR.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  sync-version-code:
+    name: Sync versionCode and fastlane changelog
+    needs: release-please
+    if: needs.release-please.outputs.pr
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ fromJSON(needs.release-please.outputs.pr).headBranchName }}
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+      - run: scripts/release/sync_version.py
+      - name: Commit to the release PR
+        run: |
+          git add app/build.gradle* fastlane/metadata/android/en-US/changelogs/
+          if git diff --cached --quiet; then echo "Already in sync."; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: sync versionCode and fastlane changelog"
+          git push
+
+  build-apk:
+    name: Build and sign OneShot.apk (F-Droid-like)
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    # Same environment as the CI reproducibility job, so F-Droid's rebuild matches byte for byte.
+    # The F-Droid buildserver now uses debian:trixie + OpenJDK 21: switched together with #26.
+    container:
+      image: debian:bullseye
+      volumes:
+        - /usr/local/lib/android/sdk:/opt/android-sdk
+    env:
+      ANDROID_HOME: /opt/android-sdk
+    steps:
+      - name: Install Debian JDK and apksigcopier
+        run: |
+          . /etc/os-release
+          if [ "$VERSION_CODENAME" = bullseye ]; then
+            # Debian 11 left LTS in 2026: its packages are served from archive.debian.org now.
+            printf '%s\n' \
+              'deb http://archive.debian.org/debian bullseye main' \
+              'deb http://archive.debian.org/debian bullseye-updates main' \
+              'deb http://archive.debian.org/debian-security bullseye-security main' > /etc/apt/sources.list
+          fi
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends openjdk-11-jdk-headless git ca-certificates unzip python3-pip >/dev/null
+          pip3 install --quiet apksigcopier
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+      - name: Verify versionCode matches the tag
+        run: scripts/release/sync_version.py --check
+      - name: Build unsigned release like F-Droid
+        run: ./gradlew --no-daemon assembleRelease
+      - name: Sign
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::RELEASE_KEYSTORE_BASE64 is not set. F-Droid only accepts OneShot.apk signed with the original key (AllowedAPKSigningKeys)."
+            exit 1
+          fi
+          unsigned=app/build/outputs/apk/release/app-release-unsigned.apk
+          apksigner=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)/apksigner
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          # No zipalign: F-Droid copies this signature onto its own unsigned build, so the
+          # signed APK must contain exactly the unsigned build's bytes.
+          "$apksigner" sign --ks "$RUNNER_TEMP/release.jks" --ks-pass env:KEYSTORE_PASSWORD \
+            --ks-key-alias "$KEY_ALIAS" --key-pass env:KEY_PASSWORD --out OneShot.apk "$unsigned"
+          rm -f "$RUNNER_TEMP/release.jks"
+          "$apksigner" verify --print-certs OneShot.apk | grep -i 'SHA-256 digest'
+          PATH="$(dirname "$apksigner"):$PATH" apksigcopier compare OneShot.apk --unsigned "$unsigned"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: OneShot-release
+          path: OneShot.apk
+          if-no-files-found: error
+
+  publish-apk:
+    name: Attach OneShot.apk to the release
+    needs: [release-please, build-apk]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: OneShot-release
+      - name: Upload (asset name is fixed by the F-Droid Binaries URL)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: gh release upload "$TAG" OneShot.apk --clobber -R "$GITHUB_REPOSITORY"
