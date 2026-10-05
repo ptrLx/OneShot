@@ -44,7 +44,20 @@ What this means for us:
 | Release PR merged (upstream) | `OneShot.apk` attached to the GitHub release `vX.Y.Z` | upstream release key from the `release` environment |
 | Manual run of `sign-release.yml` (rehearsal) | signed `OneShot.apk` as a workflow artifact, nothing published | upstream release key from the `release` environment |
 
-The release APK is built by the reusable workflow `sign-release.yml` in two jobs. The **build** job uses the same Debian container and JDK as the CI reproducibility job (which mirrors the F-Droid buildserver), checks versionCode against the tag and runs the APK checks; it has no access to the key. The **sign** job runs in the protected `release` environment, never checks out or runs repository code, signs the unsigned artifact with `apksigner` without zipalign (F-Droid must be able to transplant the signature onto its own build), fails unless the APK has exactly one signer whose certificate SHA-256 is the `AllowedAPKSigningKeys` value, and checks the transplant with `apksigcopier compare`. `release.yml` then uploads the APK under the fixed asset name `OneShot.apk`. `reproduce-release.yml` can re-verify any published release from source.
+The release APK is built by the reusable workflow `sign-release.yml` in two jobs. The **build** job uses the same Debian container and JDK as the CI reproducibility job (which mirrors the F-Droid buildserver), checks versionCode against the tag and runs the APK checks; it has no access to the key. The **sign** job runs in the protected `release` environment, never checks out or runs repository code, signs the unsigned artifact with `apksigner` without zipalign (F-Droid must be able to transplant the signature onto its own build), fails unless the APK has exactly one signer whose certificate SHA-256 is the `AllowedAPKSigningKeys` value, and checks the transplant with `apksigcopier compare`. `release.yml` then uploads the APK under the fixed asset name `OneShot.apk`. `reproduce-release.yml` can re-verify any published release from source; it picks the environment F-Droid used for that release (`debian:bullseye` with OpenJDK 11 up to v1.1.1, `debian:trixie` with OpenJDK 21 afterwards), the `image` and `jdk` inputs override it.
+
+## Toolchain
+
+| Component | Version | Why |
+|---|---|---|
+| JDK | 21 (Temurin on the runner, Debian OpenJDK in the containers) | default JDK of the F-Droid buildserver (Debian trixie) |
+| Gradle wrapper | 9.4.1, `distributionSha256Sum` pinned | newest Gradle release tested with AGP 8.13; F-Droid runs exactly the wrapper version and checks it against its Gradle transparency log |
+| Android Gradle plugin | 8.13.2 | last AGP 8 release; AGP 9 (built-in Kotlin, new DSL) and Hilt 2.59+ (needs AGP 9) are a separate step |
+| Kotlin | 2.0.21 with the Compose compiler Gradle plugin, strong skipping off | Gradle 9 needs Kotlin 2; Room 2.6.1 under kapt reads Kotlin metadata up to 2.0 |
+| Room / Hilt | 2.6.1 / 2.55 | Room 2.6.1 is the oldest Room whose kapt processor reads Kotlin 2.0 metadata; Hilt 2.55 is the newest Hilt that still depends on a Kotlin 2.0 stdlib (newer stdlib metadata breaks Room's processor) |
+| compileSdk | 34 (targetSdk 32, minSdk 29) | Room 2.6.1 requires compileSdk 34; runtime behavior follows targetSdk, which is unchanged |
+
+Baseline profiles: AGP packs `assets/dexopt/baseline.prof` and `baseline.profm` from the profiles shipped by libraries. Before AGP 8.1 the `.profm` listed the dex files in hash map order ([issuetracker 231837768](https://issuetracker.google.com/issues/231837768)), which v1.1.1 worked around with `app/fix-profm.gradle`. Since AGP 8.1 the profile generator sorts the dex files itself ([tools/base 2f2c6b3](https://android.googlesource.com/platform/tools/base/+/2f2c6b30b55e18e2672edf5ee8e8e583be759d3e)), so the script was removed with the AGP 8 upgrade (#26). The CI reproducibility job guards this; if the profiles ever differ again, F-Droid's documented fallback is to disable the `ArtProfile` tasks.
 
 ## Signing setup (`release` environment)
 
@@ -71,7 +84,7 @@ Check the key locally before storing it: `keytool -list -v -keystore <file>` mus
 
 ## Rules that keep F-Droid green
 
-- Toolchain changes go together: wrapper Gradle version, CI JDK, Debian image of the reproducibility and release jobs. They must match what the F-Droid buildserver uses (#26).
+- Toolchain changes go together: wrapper Gradle version, CI JDK (`JAVA_VERSION`), Debian image and JDK of the reproducibility and release jobs. They must match what the F-Droid buildserver uses, today `debian:trixie` with its default OpenJDK 21 (see *Toolchain*).
 - With AGP 8 or newer: `dependenciesInfo { includeInApk = false; includeInBundle = false }` and `vcsInfo { include = false }`.
 - No proprietary libraries (Google Play services, Firebase, Crashlytics), no prebuilt binaries in the repository except the validated Gradle wrapper jar, no toolchain auto-download.
 - Kotlin Multiplatform: iOS targets must not be configured on Linux builds unless explicitly enabled (#44), so the F-Droid build never downloads Kotlin/Native.

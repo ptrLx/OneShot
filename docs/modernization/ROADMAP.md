@@ -12,7 +12,7 @@ Every change, without exception, must keep these three properties. They are chec
 
 ## Key findings that shape the plan
 
-- **The current master cannot be built by F-Droid anymore.** The F-Droid buildserver now runs Debian trixie with OpenJDK 21 by default, and Gradle 7.4 (current wrapper) does not run on Java 21. The toolchain upgrade (#26) is therefore a release blocker, not polish.
+- **F-Droid could not build master before the toolchain upgrade.** The F-Droid buildserver runs Debian trixie with OpenJDK 21 by default, and the old Gradle 7.4 wrapper does not run on Java 21. The toolchain upgrade (#26: Gradle 9.4.1, AGP 8.13, Kotlin 2.0, JDK 21) was therefore a release blocker, not polish.
 - **Reproducible builds are the most fragile part.** Our signed `OneShot.apk` must match F-Droid's own build. CI rebuilds every change in an F-Droid-like Debian container and compares the APKs byte by byte, and `reproduce-release.yml` checks published releases with `apksigcopier`.
 - **The data contract is small but implicit.** One Room table (schema v1, identityHash `78c91e56607bf67a0e206c573e5cd700`), one DataStore key holding a SAF tree URI, image files named `OneShot_yyyyMMddHHmmss.jpg` (the 26-character length is enforced on save and import), and a JSON export format. Nothing protected it so far.
 - **The product promises "no internet permission".** The CI checks the built APK for it. Cloud sync therefore needs an opt-in design (see #66).

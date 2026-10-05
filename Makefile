@@ -52,8 +52,8 @@ ci-apk:  ## Download the APKs of the latest successful CI run of the current bra
 ##@ Releases (needs the gh CLI and the `release` environment)
 
 REF ?= master
-IMAGE ?= debian:bullseye
-JDK ?= 11
+IMAGE ?= debian:trixie
+JDK ?= 21
 
 .PHONY: release-rehearsal release-rehearsal-apk
 release-rehearsal:  ## Build and sign REF with the release key without publishing (approve the run in the Actions tab)

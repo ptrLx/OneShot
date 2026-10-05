@@ -14,10 +14,9 @@ permissions:
   contents: read
 
 env:
-  # JDK of the current toolchain (AGP 7.3 / Gradle 7.4), the same major the F-Droid buildserver used
-  # for v1.1.1 (Debian bullseye). The F-Droid buildserver now runs Debian trixie with OpenJDK 21, which
-  # Gradle 7.4 cannot run on: the toolchain upgrade (#26) moves both jobs below to trixie + JDK 21.
-  JAVA_VERSION: '11'
+  # Same JDK major as the F-Droid buildserver (Debian trixie, default OpenJDK 21), see
+  # docs/modernization/RELEASING.md. Change it together with the Debian image of the reproducible job.
+  JAVA_VERSION: '21'
 
 jobs:
   fdroid-metadata:
@@ -66,7 +65,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     container:
-      image: debian:bullseye
+      image: debian:trixie
       volumes:
         - /usr/local/lib/android/sdk:/opt/android-sdk
     env:
@@ -74,16 +73,8 @@ jobs:
     steps:
       - name: Install Debian JDK
         run: |
-          . /etc/os-release
-          if [ "$VERSION_CODENAME" = bullseye ]; then
-            # Debian 11 left LTS in 2026: its packages are served from archive.debian.org now.
-            printf '%s\n' \
-              'deb http://archive.debian.org/debian bullseye main' \
-              'deb http://archive.debian.org/debian bullseye-updates main' \
-              'deb http://archive.debian.org/debian-security bullseye-security main' > /etc/apt/sources.list
-          fi
           apt-get update -qq
-          apt-get install -y -qq --no-install-recommends openjdk-11-jdk-headless git ca-certificates unzip >/dev/null
+          apt-get install -y -qq --no-install-recommends openjdk-21-jdk-headless git ca-certificates unzip >/dev/null
       - uses: actions/checkout@v7
       - name: Build unsigned release like F-Droid
         run: ./gradlew --no-daemon assembleRelease

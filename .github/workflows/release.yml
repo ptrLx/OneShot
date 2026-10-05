@@ -58,12 +58,12 @@ jobs:
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
     # Unsigned F-Droid-like build, then signing in the protected `release` environment.
-    # The F-Droid buildserver now uses debian:trixie + OpenJDK 21: switched together with #26.
+    # Same image and JDK as the F-Droid buildserver (debian:trixie, default OpenJDK 21).
     uses: ./.github/workflows/sign-release.yml
     with:
       ref: ${{ needs.release-please.outputs.tag_name }}
-      image: debian:bullseye
-      jdk: '11'
+      image: debian:trixie
+      jdk: '21'
 
   publish-apk:
     name: Attach OneShot.apk to the release

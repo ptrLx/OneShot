@@ -18,10 +18,10 @@ on:
         type: string
       image:
         type: string
-        default: debian:bullseye
+        default: debian:trixie
       jdk:
         type: string
-        default: '11'
+        default: '21'
   workflow_dispatch:
     inputs:
       ref:
@@ -30,10 +30,10 @@ on:
         default: master
       image:
         description: Debian image of the F-Droid buildserver for this code
-        default: debian:bullseye
+        default: debian:trixie
       jdk:
         description: Debian OpenJDK major version
-        default: '11'
+        default: '21'
 
 permissions:
   contents: read

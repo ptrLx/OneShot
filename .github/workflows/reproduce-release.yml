@@ -16,11 +16,11 @@ on:
         # The v1.1.1 tag points to 319fba1, F-Droid built a3f3b35 (adds the baseline profile sort fix).
         default: a3f3b358fe56ac73b25b7810595004d7a7ba2140
       image:
-        description: Debian image used by the F-Droid buildserver for this release
-        default: debian:bullseye
+        description: Debian image of the F-Droid buildserver for this release (empty = by tag, see below)
+        default: ''
       jdk:
-        description: Debian OpenJDK major version
-        default: '11'
+        description: Debian OpenJDK major version (empty = by tag, see below)
+        default: ''
   pull_request:
     paths:
       - .github/workflows/reproduce-release.yml
@@ -29,11 +29,38 @@ permissions:
   contents: read
 
 jobs:
+  toolchain:
+    # Every release must be rebuilt with the toolchain F-Droid used for it. Up to v1.1.1 (Gradle 7.4)
+    # that was debian:bullseye with OpenJDK 11; from the Gradle 9 toolchain on it is debian:trixie
+    # with OpenJDK 21, the buildserver default. The image and jdk inputs override this choice.
+    name: Select build environment
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.select.outputs.image }}
+      jdk: ${{ steps.select.outputs.jdk }}
+    steps:
+      - id: select
+        env:
+          TAG: ${{ inputs.tag || 'v1.1.1' }}
+          IMAGE: ${{ inputs.image }}
+          JDK: ${{ inputs.jdk }}
+        run: |
+          version=${TAG#v}
+          if [ "$(printf '%s\n' "$version" 1.1.1 | sort -V | tail -n 1)" = 1.1.1 ]; then
+            image=debian:bullseye; jdk=11
+          else
+            image=debian:trixie; jdk=21
+          fi
+          echo "image=${IMAGE:-$image}" >> "$GITHUB_OUTPUT"
+          echo "jdk=${JDK:-$jdk}" >> "$GITHUB_OUTPUT"
+          echo "$TAG: ${IMAGE:-$image} with OpenJDK ${JDK:-$jdk}"
+
   reproduce:
     name: Reproduce ${{ inputs.repository || 'ptrLx/OneShot' }}@${{ inputs.tag || 'v1.1.1' }}
+    needs: toolchain
     runs-on: ubuntu-latest
     container:
-      image: ${{ inputs.image || 'debian:bullseye' }}
+      image: ${{ needs.toolchain.outputs.image }}
       volumes:
         - /usr/local/lib/android/sdk:/opt/android-sdk
     env:
@@ -53,8 +80,14 @@ jobs:
               'deb http://archive.debian.org/debian-security bullseye-security main' > /etc/apt/sources.list
           fi
           apt-get update -qq
-          apt-get install -y -qq --no-install-recommends openjdk-${{ inputs.jdk || '11' }}-jdk-headless git ca-certificates unzip curl python3-pip >/dev/null
-          pip3 install --quiet apksigcopier
+          apt-get install -y -qq --no-install-recommends openjdk-${{ needs.toolchain.outputs.jdk }}-jdk-headless git ca-certificates unzip curl >/dev/null
+          if [ "$VERSION_CODENAME" = bullseye ]; then
+            apt-get install -y -qq --no-install-recommends python3-pip >/dev/null
+            pip3 install --quiet apksigcopier
+          else
+            # Packaged since bookworm; pip refuses system-wide installs there (PEP 668).
+            apt-get install -y -qq --no-install-recommends apksigcopier >/dev/null
+          fi
       - uses: actions/checkout@v7
         with:
           repository: ${{ env.REPO }}
