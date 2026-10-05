@@ -1,0 +1,2 @@
+# JSON export fixtures are compared byte for byte: never normalize line endings.
+app/src/test/resources/export/*.json -text

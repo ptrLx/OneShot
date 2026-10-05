@@ -21,6 +21,8 @@ The strategy has five layers. Cheap layers run on every PR; expensive layers run
 
 ## Layer 1: contract unit tests (JVM, fast)
 
+Implemented in `app/src/test/java/de/ptrlx/oneshot/contract/` (run by `make test` and CI's `testDebugUnitTest`). Identifiers that only exist as private literals (DataStore name, filename patterns, MIME types) or in Room-generated code (CREATE TABLE, identity hash, `INSERT OR REPLACE`) are read from the compiled class files, so production code stays untouched.
+
 Pin every identifier from the data contract in plain JUnit tests so a rename fails loudly, independent of the guard:
 
 - `DiaryEntryDatabase.DATABASE_NAME == "diary_entry_db"`, table and column names (read from the exported schema JSON)
@@ -30,6 +32,8 @@ Pin every identifier from the data contract in plain JUnit tests so a rename fai
 - `Converters` round-trip `LocalDate` to epoch day for edge dates (1970-01-01, leap days, year 2100)
 
 ## Layer 2: JSON golden files (JVM, fast)
+
+Implemented in `JsonExportGoldenTest` next to the Layer 1 tests. v1.0.0 to v1.1.1 share one serializer, so there is one format today. The export has no nondeterministic content, so it is compared byte for byte. The fixtures are marked `-text` in `.gitattributes` so git never rewrites their line endings.
 
 - Fixtures under `app/src/test/resources/export/`: `v1.1.1-basic.json` (all happiness values, unicode and emoji text, empty strings, leap day, multi-line text) and `v1.1.1-unknown-happiness.json`.
 - Tests: decoding each fixture yields the expected `DiaryEntry` list; encoding that list reproduces the fixture byte for byte; unknown happiness decodes to `NOT_SPECIFIED`; an import of an entry whose `relativePath` is not 26 characters is rejected (current behavior, made explicit).
