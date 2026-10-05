@@ -126,11 +126,12 @@ jobs:
       - name: Verify signer is the F-Droid key
         run: |
           certs=$(apksigner verify --print-certs OneShot.apk)
-          signers=$(grep -c '^Signer #[0-9]* certificate SHA-256 digest:' <<<"$certs" || true)
-          actual=$(sed -nE 's/^Signer #1 certificate SHA-256 digest: ([0-9a-f]+)$/\1/p' <<<"$certs")
-          echo "Signer certificate SHA-256: $actual"
-          if [ "$signers" != 1 ] || [ "$actual" != "$EXPECTED_CERT_SHA256" ]; then
-            echo "::error::OneShot.apk must have exactly one signer with certificate SHA-256 $EXPECTED_CERT_SHA256 (found $signers signer(s), first: $actual). Wrong keystore or alias?"
+          echo "$certs"
+          # The label differs between apksigner versions and signature schemes ("Signer #1 ...",
+          # "Signer (minSdkVersion=..., maxSdkVersion=...) ..."), so collect every digest.
+          digests=$(sed -nE 's/^.*certificate SHA-256 digest: ([0-9a-f]{64})$/\1/p' <<<"$certs" | sort -u)
+          if [ "$digests" != "$EXPECTED_CERT_SHA256" ]; then
+            echo "::error::OneShot.apk must be signed by exactly one certificate with SHA-256 $EXPECTED_CERT_SHA256, found: ${digests:-none}. Wrong keystore or alias?"
             exit 1
           fi
       - name: Verify F-Droid can transplant the signature
