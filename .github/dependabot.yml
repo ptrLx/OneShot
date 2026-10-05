@@ -1,3 +1,5 @@
+# Version updates. Titles must be conventional commits (checked by the PR title workflow) and
+# never trigger a release: build(deps) for Gradle, ci(deps) for GitHub Actions.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -6,17 +8,37 @@ updates:
       interval: weekly
     commit-message:
       prefix: ci
+      include: scope
     groups:
-      github-actions:
+      actions:
         patterns: ['*']
 
   - package-ecosystem: gradle
     directory: /
     schedule:
       interval: weekly
-    # Version updates stay paused until the toolchain upgrade lands (#26, #32): every library bump
-    # needs the newer AGP/Kotlin first. Security updates are still opened.
-    open-pull-requests-limit: 0
+    open-pull-requests-limit: 5
     commit-message:
       prefix: build
       include: scope
+    ignore:
+      # Toolchain majors change what the F-Droid buildserver must run (Gradle, AGP, Kotlin, JDK):
+      # upgrade them by hand together with the CI containers, see docs/modernization/RELEASING.md.
+      - dependency-name: com.android.application
+        update-types: [version-update:semver-major]
+      - dependency-name: org.jetbrains.kotlin*
+        update-types: [version-update:semver-major]
+    groups:
+      kotlin:
+        patterns: ['org.jetbrains.kotlin*', 'com.google.devtools.ksp*', 'org.jetbrains.kotlinx*']
+      compose:
+        patterns: ['androidx.compose*']
+      androidx:
+        patterns: ['androidx.*']
+        exclude-patterns: ['androidx.compose*', 'androidx.test*', 'androidx.room*']
+      room:
+        patterns: ['androidx.room*']
+      hilt:
+        patterns: ['com.google.dagger*']
+      test:
+        patterns: ['androidx.test*', 'junit*']

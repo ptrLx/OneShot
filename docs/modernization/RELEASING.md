@@ -86,6 +86,7 @@ Check the key locally before storing it: `keytool -list -v -keystore <file>` mus
 
 - Toolchain changes go together: wrapper Gradle version, CI JDK (`JAVA_VERSION`), Debian image and JDK of the reproducibility and release jobs. They must match what the F-Droid buildserver uses, today `debian:trixie` with its default OpenJDK 21 (see *Toolchain*).
 - With AGP 8 or newer: `dependenciesInfo { includeInApk = false; includeInBundle = false }` and `vcsInfo { include = false }`.
+- Dependabot (`.github/dependabot.yml`) opens grouped weekly updates as `build(deps)` and `ci(deps)` PRs, which never trigger a release. Major updates of the Android Gradle plugin and Kotlin are ignored there and done by hand, together with the CI containers. The Gradle wrapper is also updated by hand, after checking which Gradle version the F-Droid buildserver supports.
 - No proprietary libraries (Google Play services, Firebase, Crashlytics), no prebuilt binaries in the repository except the validated Gradle wrapper jar, no toolchain auto-download.
 - Kotlin Multiplatform: iOS targets must not be configured on Linux builds unless explicitly enabled (#44), so the F-Droid build never downloads Kotlin/Native.
 - After the first release from the new pipeline, watch the F-Droid build log (monitor.f-droid.org) and, if the recipe needs changes, open a merge request on fdroiddata.
