@@ -120,7 +120,9 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 -d > "$keystore"
           # No zipalign: F-Droid copies this signature onto its own unsigned build, so the
           # signed APK must contain exactly the unsigned build's bytes.
-          apksigner sign --ks "$keystore" --ks-pass env:KEYSTORE_PASSWORD \
+          # --alignment-preserved: newer apksigner versions re-align entries while signing, which
+          # changes the APK body and breaks the signature transplant. Same flags as the CI dry run.
+          apksigner sign --alignment-preserved --ks "$keystore" --ks-pass env:KEYSTORE_PASSWORD \
             --ks-key-alias "$KEY_ALIAS" --key-pass env:KEY_PASSWORD \
             --out OneShot.apk unsigned/app-release-unsigned.apk
       - name: Verify signer is the F-Droid key

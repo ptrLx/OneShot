@@ -84,3 +84,35 @@ jobs:
           path: runner-build
       - name: Compare with the runner build
         run: scripts/ci/compare-apks.sh runner-build/release/app-release-unsigned.apk app/build/outputs/apk/release/app-release-unsigned.apk
+
+  signing-dry-run:
+    # Signs the unsigned release with a throwaway key exactly like sign-release.yml and checks that
+    # F-Droid could transplant the signature onto its own build. Keep the apksigner flags in sync.
+    name: Signing dry run (throwaway key)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: apks
+          path: apks
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Install apksigcopier
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet apksigcopier
+          echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
+          ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1 >> "$GITHUB_PATH"
+      - name: Sign with a throwaway key
+        run: |
+          keytool -genkeypair -keystore "$RUNNER_TEMP/dry-run.p12" -storetype PKCS12 -storepass dry-run \
+            -alias dry-run -keyalg RSA -keysize 2048 -validity 1 -dname CN=dry-run
+          apksigner sign --alignment-preserved --ks "$RUNNER_TEMP/dry-run.p12" --ks-pass pass:dry-run \
+            --ks-key-alias dry-run --key-pass pass:dry-run \
+            --out OneShot.apk apks/release/app-release-unsigned.apk
+          apksigner verify --print-certs OneShot.apk
+      - name: Verify F-Droid can transplant the signature
+        run: apksigcopier compare OneShot.apk --unsigned apks/release/app-release-unsigned.apk
