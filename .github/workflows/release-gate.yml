@@ -1,0 +1,58 @@
+name: Release gate
+
+# Required status check on master. For a release PR it rehearses the release exactly: builds the
+# PR head like F-Droid, signs it in the protected `release` environment (a maintainer approves
+# the deployment) and fails unless F-Droid accepts the key. A release PR can therefore only be
+# merged where the real F-Droid key is configured. For every other PR the gate passes at once.
+on:
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: release-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: versionCode and fastlane changelog
+    if: startsWith(github.head_ref, 'release-please--')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - run: scripts/release/sync_version.py --check
+
+  rehearsal:
+    name: Signing rehearsal
+    needs: version
+    uses: ./.github/workflows/sign-release.yml
+    with:
+      ref: ${{ github.event.pull_request.head.sha }}
+      require-fdroid-key: true
+
+  gate:
+    # The required check. Skipped jobs (every PR that is not a release PR) count as passed.
+    name: Release gate
+    needs: [version, rehearsal]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          VERSION: ${{ needs.version.result }}
+          REHEARSAL: ${{ needs.rehearsal.result }}
+        run: |
+          echo "version check: $VERSION, signing rehearsal: $REHEARSAL"
+          if [ "$VERSION" = skipped ] && [ "$REHEARSAL" = skipped ]; then
+            echo "Not a release PR."
+            exit 0
+          fi
+          if [ "$VERSION" != success ] || [ "$REHEARSAL" != success ]; then
+            echo "::error::Release blocked: the release PR must pass the version check and a signing rehearsal with a key F-Droid accepts."
+            exit 1
+          fi
+          echo "Release PR can be merged."

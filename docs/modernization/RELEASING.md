@@ -75,12 +75,27 @@ The release key is stored only as secrets of a GitHub **environment** named `rel
 Protection rules for the `release` environment:
 
 - **Required reviewers:** the maintainer. Every signing run waits for approval, so nothing gets signed unnoticed. Approve promptly after merging a release PR: F-Droid may try to build as soon as it sees the tag, and fails while `OneShot.apk` is missing.
-- **Deployment branches and tags:** selected branches, `master` only. Release builds run from `master` (`release.yml` builds the tag that release-please just created), so other branches can never reach the key.
+- **Deployment branches and tags:** selected branches `master` and `release-please--branches--master*`. Releases run from `master` (`release.yml` builds the tag that release-please just created) and the release gate runs on the release PR branch; no other branch can reach the key.
 - No wait timer, admins not allowed to bypass.
+
+## Release gate (required check)
+
+`release-gate.yml` runs on every PR into `master`; its job **Release gate** is a required status check (branch ruleset on `master`). For a release PR (branch `release-please--…`) it rehearses the release exactly:
+
+1. `sync_version.py --check`: versionCode and the fastlane changelog match versionName.
+2. `sign-release.yml` builds the PR head like F-Droid and signs it in the `release` environment (the maintainer approves the deployment, which is the explicit go for the release).
+3. The signed APK must have exactly the certificate configured in the environment, `apksigcopier compare` must succeed, and **F-Droid must accept the key**: the certificate SHA-256 must be listed in `AllowedAPKSigningKeys` of the live F-Droid recipe (fdroiddata).
+
+Only then the gate passes and the release PR can be merged. For every other PR the gate passes immediately. Consequences:
+
+- **Fork:** its key is not in `AllowedAPKSigningKeys`, so the gate fails and release PRs stay blocked, as intended.
+- **Upstream:** with the original key in the environment the gate passes and the release PR can be merged; `release.yml` then signs the tagged commit with the same checks and attaches `OneShot.apk`.
+- Release PRs opened with the default `GITHUB_TOKEN` do not start workflows on their own (they show "approval required"); set `RELEASE_PLEASE_TOKEN` so the gate runs automatically.
+- Enable "Require branches to be up to date before merging", so the gated PR head equals the commit that gets tagged.
 
 Check the key locally before storing it: `keytool -list -v -keystore <file>` must show the alias with certificate SHA-256 `51:1C:89:33:…:04:56`.
 
-**Rehearsal:** start `sign-release.yml` manually from `master` (`make release-rehearsal`, optionally `REF=<tag or commit>`), approve the run, and download the signed `OneShot.apk` artifact. It proves that the secrets, the alias and the fingerprint are right without creating a release. The fork has no release key; its release PRs only validate the automation and are not merged.
+**Manual rehearsal:** start `sign-release.yml` manually from `master` (`make release-rehearsal`, optionally `REF=<tag or commit>`), approve the run, and download the signed `OneShot.apk` artifact. It proves that the secrets, the alias and the fingerprint are right without creating a release; with a test key it only warns that F-Droid would not accept the key (set the input `require-fdroid-key` to fail instead). The fork has no release key; its release PRs only validate the automation and are not merged.
 
 ## Rules that keep F-Droid green
 

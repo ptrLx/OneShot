@@ -7,8 +7,9 @@ name: Signed release APK
 # only signs the unsigned APK handed over as an artifact. A compromised build script or Gradle
 # plugin therefore cannot read the key.
 #
-# Called by release.yml for every release. Run it manually for a signing rehearsal: it produces
-# a signed OneShot.apk artifact but publishes nothing.
+# Called by release-gate.yml for every release PR (rehearsal that blocks the merge unless F-Droid
+# accepts the key) and by release.yml for every release. Run it manually for a signing rehearsal:
+# it produces a signed OneShot.apk artifact but publishes nothing.
 on:
   workflow_call:
     inputs:
@@ -22,6 +23,10 @@ on:
       jdk:
         type: string
         default: '21'
+      require-fdroid-key:
+        description: Fail unless F-Droid's AllowedAPKSigningKeys lists the signing certificate
+        type: boolean
+        default: true
   workflow_dispatch:
     inputs:
       ref:
@@ -34,6 +39,10 @@ on:
       jdk:
         description: Debian OpenJDK major version
         default: '21'
+      require-fdroid-key:
+        description: Fail unless F-Droid's AllowedAPKSigningKeys lists the signing certificate
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -138,6 +147,26 @@ jobs:
           fi
       - name: Verify F-Droid can transplant the signature
         run: apksigcopier compare OneShot.apk --unsigned unsigned/app-release-unsigned.apk
+      - name: Verify F-Droid accepts the signing key
+        env:
+          REQUIRED: ${{ inputs.require-fdroid-key }}
+          # The recipe F-Droid builds from; it only publishes APKs signed by a key listed here.
+          RECIPE_URL: https://gitlab.com/fdroid/fdroiddata/-/raw/master/metadata/de.ptrlx.oneshot.yml
+        run: |
+          actual=$(apksigner verify --print-certs OneShot.apk \
+            | sed -nE 's/^.*certificate SHA-256 digest: ([0-9a-f]{64})$/\1/p' | sort -u)
+          allowed=$(curl -fsSL --retry 3 "$RECIPE_URL" \
+            | sed -n '/^AllowedAPKSigningKeys:/,/^[^ -]/p' | grep -oE '[0-9a-f]{64}' || true)
+          echo "Signing certificate: $actual"
+          echo "F-Droid AllowedAPKSigningKeys: ${allowed:-none found}"
+          if [ -n "$allowed" ] && grep -qx "$actual" <<<"$allowed"; then
+            echo "F-Droid accepts this signing key."
+          elif [ "$REQUIRED" = true ]; then
+            echo "::error::F-Droid does not accept this signing key (AllowedAPKSigningKeys in fdroiddata). A release signed with it would never reach F-Droid users."
+            exit 1
+          else
+            echo "::warning::F-Droid does not accept this signing key. Fine for a rehearsal with a test key, but the release gate blocks release PRs signed with it."
+          fi
       - uses: actions/upload-artifact@v7
         with:
           name: OneShot-release
