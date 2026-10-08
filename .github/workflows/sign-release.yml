@@ -9,7 +9,8 @@ name: Signed release APK
 #
 # Called by release-gate.yml for every release PR (rehearsal that blocks the merge unless F-Droid
 # accepts the key) and by release.yml for every release. Run it manually for a signing rehearsal:
-# it produces a signed OneShot.apk artifact but publishes nothing.
+# it produces a signed OneShot.apk artifact but publishes nothing. Callers must pass
+# `secrets: inherit`, otherwise the release environment's secrets stay empty here.
 on:
   workflow_call:
     inputs:

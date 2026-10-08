@@ -64,6 +64,8 @@ jobs:
       ref: ${{ needs.release-please.outputs.tag_name }}
       image: debian:trixie
       jdk: '21'
+    # Called workflows only see secrets the caller passes on, the release environment's included.
+    secrets: inherit
 
   publish-apk:
     name: Attach OneShot.apk to the release
