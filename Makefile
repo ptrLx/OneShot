@@ -55,9 +55,12 @@ REF ?= master
 IMAGE ?= debian:trixie
 JDK ?= 21
 
-.PHONY: release-rehearsal release-rehearsal-apk
+.PHONY: release-rehearsal release-rehearsal-apk release-gate
 release-rehearsal:  ## Build and sign REF with the release key without publishing (approve the run in the Actions tab)
 	gh workflow run sign-release.yml -R $(REPO) --ref master -f ref=$(REF) -f image=$(IMAGE) -f jdk=$(JDK)
+
+release-gate:  ## Run the release gate on the release-please branch (needed while release PRs are pushed with the default token)
+	gh workflow run release-gate.yml -R $(REPO) --ref $$(gh pr list -R $(REPO) --state open --search 'head:release-please--branches--master' --json headRefName --jq '.[0].headRefName')
 
 release-rehearsal-apk:  ## Download the signed OneShot.apk of the latest successful rehearsal into build/release
 	rm -rf build/release

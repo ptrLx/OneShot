@@ -80,7 +80,7 @@ Protection rules for the `release` environment:
 
 ## Release gate (required check)
 
-`release-gate.yml` runs on every PR into `master`; its job **Release gate** is a required status check (branch ruleset on `master`). For a release PR (branch `release-please--…`) it rehearses the release exactly:
+`release-gate.yml` provides the job **Release gate**, a required status check (branch ruleset on `master`). On ordinary PRs it passes immediately. For a release PR it runs on every push to the release-please branch, or manually with `make release-gate`, because environments do not deploy from the `refs/pull/N/merge` ref of pull_request runs; the check is attached to the branch head commit and therefore counts for the PR (the pull_request run of a release PR uses a different job name, so it cannot satisfy the check). It rehearses the release exactly:
 
 1. `sync_version.py --check`: versionCode and the fastlane changelog match versionName.
 2. `sign-release.yml` builds the PR head like F-Droid and signs it in the `release` environment (the maintainer approves the deployment, which is the explicit go for the release).
@@ -90,7 +90,7 @@ Only then the gate passes and the release PR can be merged. For every other PR t
 
 - **Fork:** its key is not in `AllowedAPKSigningKeys`, so the gate fails and release PRs stay blocked, as intended.
 - **Upstream:** with the original key in the environment the gate passes and the release PR can be merged; `release.yml` then signs the tagged commit with the same checks and attaches `OneShot.apk`.
-- Release PRs opened with the default `GITHUB_TOKEN` do not start workflows on their own (they show "approval required"); set `RELEASE_PLEASE_TOKEN` so the gate runs automatically.
+- Pushes and PRs made with the default `GITHUB_TOKEN` do not start the gate (and PR checks show "approval required"). Set `RELEASE_PLEASE_TOKEN` so the gate runs automatically on every update of the release PR; otherwise start it with `make release-gate`.
 - Enable "Require branches to be up to date before merging", so the gated PR head equals the commit that gets tagged.
 
 Check the key locally before storing it: `keytool -list -v -keystore <file>` must show the alias with certificate SHA-256 `51:1C:89:33:…:04:56`.

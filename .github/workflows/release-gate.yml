@@ -1,12 +1,21 @@
 name: Release gate
 
 # Required status check on master. For a release PR it rehearses the release exactly: builds the
-# PR head like F-Droid, signs it in the protected `release` environment (a maintainer approves
-# the deployment) and fails unless F-Droid accepts the key. A release PR can therefore only be
-# merged where the real F-Droid key is configured. For every other PR the gate passes at once.
+# release branch head like F-Droid, signs it in the protected `release` environment (a maintainer
+# approves the deployment) and fails unless F-Droid accepts the key. A release PR can therefore
+# only be merged where the real F-Droid key is configured. For every other PR the gate passes.
+#
+# The rehearsal runs on push to the release-please branch (or manually on it), not on the
+# pull_request event: environments only deploy from allowed branches, and pull_request runs use
+# refs/pull/N/merge. The check counts for the PR because it is attached to the same head commit.
+# Pushes made with the default GITHUB_TOKEN start no workflows: without RELEASE_PLEASE_TOKEN start
+# it with `make release-gate`.
 on:
   pull_request:
     branches: [master]
+  push:
+    branches: ['release-please--branches--master**']
+  workflow_dispatch:
 
 concurrency:
   group: release-gate-${{ github.ref }}
@@ -18,12 +27,11 @@ permissions:
 jobs:
   version:
     name: versionCode and fastlane changelog
-    if: startsWith(github.head_ref, 'release-please--')
+    if: github.event_name != 'pull_request' && startsWith(github.ref_name, 'release-please--')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
       - run: scripts/release/sync_version.py --check
 
@@ -32,23 +40,34 @@ jobs:
     needs: version
     uses: ./.github/workflows/sign-release.yml
     with:
-      ref: ${{ github.event.pull_request.head.sha }}
+      ref: ${{ github.sha }}
       require-fdroid-key: true
 
   gate:
-    # The required check. Skipped jobs (every PR that is not a release PR) count as passed.
-    name: Release gate
+    # The required check. On the pull_request run of a release PR this job carries another name,
+    # so only the push (or manual) run on the release branch can satisfy "Release gate".
+    name: ${{ startsWith(github.head_ref, 'release-please--') && 'Release gate (runs on the release branch)' || 'Release gate' }}
     needs: [version, rehearsal]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - env:
+          EVENT: ${{ github.event_name }}
+          HEAD_REF: ${{ github.head_ref }}
           VERSION: ${{ needs.version.result }}
           REHEARSAL: ${{ needs.rehearsal.result }}
         run: |
+          if [ "$EVENT" = pull_request ]; then
+            if [[ "$HEAD_REF" == release-please--* ]]; then
+              echo "Release PR: the required check comes from the run on the release branch (push or make release-gate)."
+            else
+              echo "Not a release PR."
+            fi
+            exit 0
+          fi
           echo "version check: $VERSION, signing rehearsal: $REHEARSAL"
           if [ "$VERSION" = skipped ] && [ "$REHEARSAL" = skipped ]; then
-            echo "Not a release PR."
+            echo "Not a release branch."
             exit 0
           fi
           if [ "$VERSION" != success ] || [ "$REHEARSAL" != success ]; then
