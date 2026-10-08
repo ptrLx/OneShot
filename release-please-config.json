@@ -22,7 +22,7 @@
       "package-name": "OneShot",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
-        { "type": "generic", "path": "app/build.gradle" }
+        { "type": "generic", "path": "app/build.gradle.kts" }
       ]
     }
   }

@@ -31,7 +31,7 @@ What this means for us:
 ## Versioning with release-please
 
 - Every change lands on `master` as a squash commit whose message is the conventional-commit PR title (`feat:` gives a minor bump, `fix:` a patch bump, `feat!:`/`BREAKING CHANGE` a major bump; `build:`, `ci:`, `chore:`, `docs:`, `refactor:`, `test:` do not release and are hidden in the changelog).
-- `release.yml` runs release-please on every push to `master`. It keeps one release PR open (`chore: release X.Y.Z`) that updates `CHANGELOG.md`, `.release-please-manifest.json` and `versionName` in `app/build.gradle` (line marked `// x-release-please-version`).
+- `release.yml` runs release-please on every push to `master`. It keeps one release PR open (`chore: release X.Y.Z`) that updates `CHANGELOG.md`, `.release-please-manifest.json` and `versionName` in `app/build.gradle.kts` (line marked `// x-release-please-version`).
 - The same workflow runs `scripts/release/sync_version.py` on the release PR branch: it sets `versionCode = MAJOR*10000 + MINOR*100 + PATCH` (1.2.0 is 10200, larger than the legacy 111) and writes the F-Droid changelog file for that versionCode. The script refuses to lower the versionCode.
 - Configuration: `release-please-config.json` (`release-type: simple`, `include-component-in-tag: false`, so tags are `vX.Y.Z`).
 
@@ -100,6 +100,7 @@ Check the key locally before storing it: `keytool -list -v -keystore <file>` mus
 ## Rules that keep F-Droid green
 
 - Toolchain changes go together: wrapper Gradle version, CI JDK (`JAVA_VERSION`), Debian image and JDK of the reproducibility and release jobs. They must match what the F-Droid buildserver uses, today `debian:trixie` with its default OpenJDK 21 (see *Toolchain*).
+- Library and plugin versions live in the version catalog `gradle/libs.versions.toml`; `versionCode` and `versionName` stay literals in `app/build.gradle.kts`, because `fdroid checkupdates` reads them from that file with regular expressions.
 - With AGP 8 or newer: `dependenciesInfo { includeInApk = false; includeInBundle = false }` and `vcsInfo { include = false }`.
 - Dependabot (`.github/dependabot.yml`) opens grouped weekly updates as `build(deps)` and `ci(deps)` PRs, which never trigger a release. Major updates of the Android Gradle plugin and Kotlin are ignored there and done by hand, together with the CI containers. The Gradle wrapper is also updated by hand, after checking which Gradle version the F-Droid buildserver supports.
 - No proprietary libraries (Google Play services, Firebase, Crashlytics), no prebuilt binaries in the repository except the validated Gradle wrapper jar, no toolchain auto-download.
