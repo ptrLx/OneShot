@@ -40,7 +40,7 @@ jobs:
         with:
           cache-provider: basic
       - name: Build and unit test
-        run: ./gradlew --no-daemon assembleDebug assembleRelease testDebugUnitTest
+        run: ./gradlew --no-daemon assembleDebug assembleRelease testDebugUnitTest assembleDebugAndroidTest
       - name: Room schema freeze
         run: scripts/ci/check-schema-freeze.sh
       - name: APK checks

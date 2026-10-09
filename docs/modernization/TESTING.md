@@ -41,10 +41,17 @@ Implemented in `JsonExportGoldenTest` next to the Layer 1 tests. v1.0.0 to v1.1.
 
 ## Layer 3: Room migration tests (instrumented)
 
-- Add `androidx.room:room-testing` and point the test source set at `app/db-schema` as assets.
-- `MigrationTestHelper.createDatabase(DB_NAME, 1)` creates a v1 database from the exported schema; insert rows with raw SQL exactly as v1.1.1 wrote them (epoch-day dates, enum names as text).
-- Open it with the production `Room.databaseBuilder` configuration (shared code with `AppModule`) and assert that all rows read back identically through the DAO.
-- Every future schema version N adds `migrate(N-1 -> N)` tests with `runMigrationsAndValidate` and a test that runs all migrations from 1 to N in one go.
+In place: `app/src/androidTest/java/de/ptrlx/oneshot/migration/DiaryEntryDatabaseMigrationTest.kt`, run by the `Emulator` workflow on every PR (`./gradlew connectedDebugAndroidTest`); the `CI` build compiles it (`assembleDebugAndroidTest`).
+
+- `androidx.room:room-testing` (`MigrationTestHelper`) reads the exported schemas: `app/db-schema` is an asset directory of the `androidTest` source set.
+- `helper.createDatabase(TEST_DB, 1)` creates a v1 database from `1.json`; the rows are inserted with raw SQL exactly as v1.1.1 wrote them (epoch-day dates, epoch-second timestamps, enum names as text), covering every happiness value, edge dates, empty, multi-line, unicode and emoji text.
+- The database is opened with the production `Room.databaseBuilder` configuration (`openLikeTheApp()`, mirroring `AppModule` with the same migrations), so Room's identity check proves the compiled schema still equals `1.json`. All rows read back identically through the DAO, the raw stored values and the identityHash are unchanged afterwards, and the DAO queries the app uses (by date, day of year, happiness, keyword, last very happy day) work on v1 data.
+
+Pattern for a future schema version N (needs `data-change-approved`):
+
+1. Bump `@Database(version = N)`, commit the generated `N.json` (never edit older ones), write `MIGRATION_{N-1}_N` in production code and register it in `AppModule`.
+2. In the test, add it to `ALL_MIGRATIONS` and bump `LATEST_VERSION`. The existing v1 tests then run all migrations from 1 to N in one go (`runMigrationsAndValidate(TEST_DB, LATEST_VERSION, true, *ALL_MIGRATIONS)` validates the result against `N.json`).
+3. Add a test `migrate N-1 to N`: `createDatabase(TEST_DB, N - 1)`, insert rows as version N-1 wrote them, `runMigrationsAndValidate(TEST_DB, N, true, MIGRATION_{N-1}_N)`, then assert the migrated rows (and the defaults of new columns).
 
 ## Layer 4: upgrade end-to-end test (emulator)
 

@@ -46,6 +46,10 @@ android {
         includeInApk = false
         includeInBundle = false
     }
+    sourceSets {
+        // Room migration tests (MigrationTestHelper) read the exported schemas from the test APK's assets.
+        getByName("androidTest").assets.srcDir("$projectDir/db-schema")
+    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -115,6 +119,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.espresso.core)
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestImplementation(libs.room.testing)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
 }
