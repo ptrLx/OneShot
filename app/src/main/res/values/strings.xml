@@ -30,7 +30,7 @@
     <string name="license_text">"This app is made with passion and love by ptrLx. It is free software released under GPLv3 and comes with absolutely no warranty."</string>
     <string name="git_url" translatable="false">https://github.com/ptrLx/OneShot</string>
     <string name="open_source">Open Source Licenses</string>
-    <string name="open_source_text" translatable="false">Coil - Apache License Version 2.0\nDagger - Apache License Version 2.0\nAccompanist - Apache License Version 2.0</string>
+    <string name="open_source_text" translatable="false">Coil - Apache License Version 2.0\nDagger - Apache License Version 2.0</string>
     <string name="btn_import_db">Import database</string>
     <string name="qst_import_db">Import database?</string>
     <string name="warn_import_db">This may overwrite entries in your current diary</string>

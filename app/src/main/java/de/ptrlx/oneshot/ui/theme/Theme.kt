@@ -1,11 +1,16 @@
 package de.ptrlx.oneshot.ui.theme
 
+import android.app.Activity
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 //todo uncomment colors when switching to material 3
 
@@ -85,10 +90,22 @@ fun OneShotTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composabl
         content = content
     )
 
-    val systemUiController = rememberSystemUiController()
-
-    systemUiController.setSystemBarsColor(
-        color = if (darkTheme) md_theme_dark_background else md_theme_light_background
-    )
+    // Status and navigation bar in the background color, with dark icons on light colors.
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        val barColor = if (darkTheme) md_theme_dark_background else md_theme_light_background
+        SideEffect {
+            val window = (view.context as Activity).window
+            @Suppress("DEPRECATION") // edge-to-edge (#36) replaces colored system bars
+            window.statusBarColor = barColor.toArgb()
+            @Suppress("DEPRECATION")
+            window.navigationBarColor = barColor.toArgb()
+            val darkIcons = barColor.luminance() > 0.5f
+            WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = darkIcons
+                isAppearanceLightNavigationBars = darkIcons
+            }
+        }
+    }
 
 }
