@@ -1,5 +1,6 @@
 package de.ptrlx.oneshot.feature_diary.presentation.diary.components.settings
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -154,7 +155,11 @@ fun AboutText(modifier: Modifier = Modifier) {
             style = bodyStyle,
             onClick = { offset ->
                 annotatedLicenseText.onLinkClick(offset) {
-                    context.startActivity(intent)
+                    try {
+                        context.startActivity(intent)
+                    } catch (e: ActivityNotFoundException) {
+                        // no app can open the link (e.g. no browser installed)
+                    }
                 }
             }
         )

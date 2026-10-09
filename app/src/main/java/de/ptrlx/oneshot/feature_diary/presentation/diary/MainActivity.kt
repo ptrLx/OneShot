@@ -4,6 +4,12 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
@@ -30,7 +36,11 @@ class MainActivity : ComponentActivity() {
     private val LOG_TAG = "MainActivity"
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
+        // Draw behind the system bars (enforced from targetSdk 35); the layout below pads the
+        // content by the bar, cutout and keyboard insets.
+        enableEdgeToEdge()
 
         setContent {
             OneShotTheme {
@@ -42,6 +52,10 @@ class MainActivity : ComponentActivity() {
                         initialValue = ModalBottomSheetValue.Hidden
                     )
                 ModalBottomSheetLayout(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colors.background)
+                        .windowInsetsPadding(WindowInsets.safeDrawing),
                     sheetState = sheetState,
                     sheetShape = RoundedCornerShape(16.dp, 16.dp, 0.dp, 0.dp),
                     sheetContent = {

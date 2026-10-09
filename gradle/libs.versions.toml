@@ -12,6 +12,7 @@ coroutines = "1.11.0"
 
 [libraries]
 androidx-core-ktx = "androidx.core:core-ktx:1.18.0"
+androidx-core-splashscreen = "androidx.core:core-splashscreen:1.2.0"
 androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
 androidx-documentfile = "androidx.documentfile:documentfile:1.1.0"
 

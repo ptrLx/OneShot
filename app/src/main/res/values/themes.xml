@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.OneShot" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:statusBarColor">@color/purple_700</item>
+    <style name="Theme.OneShot" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- Splash screen (core-splashscreen, same look on Android 10 and 11 as on 12+). -->
+    <style name="Theme.OneShot.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.OneShot</item>
     </style>
 </resources>

@@ -5,6 +5,7 @@
     <application
         android:name=".OneShot"
         android:allowBackup="true"
+        android:enableOnBackInvokedCallback="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -16,7 +17,7 @@
         <activity
             android:name=".feature_diary.presentation.diary.MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.OneShot">
+            android:theme="@style/Theme.OneShot.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

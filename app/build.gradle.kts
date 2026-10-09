@@ -14,7 +14,7 @@ android {
     defaultConfig {
         applicationId = "de.ptrlx.oneshot"
         minSdk = 29
-        targetSdk = 32
+        targetSdk = 36
         // F-Droid reads both with regexes: keep them literal and here. release-please and
         // scripts/release/sync_version.py update them.
         versionCode = 111
@@ -46,11 +46,6 @@ android {
         includeInApk = false
         includeInBundle = false
     }
-    lint {
-        // targetSdk stays 32 in the behavior-neutral toolchain upgrade; raising it is #30.
-        // OneShot is not distributed through Google Play.
-        disable += "ExpiredTargetSdkVersion"
-    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -77,6 +72,7 @@ composeCompiler {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.documentfile)
 
