@@ -4,6 +4,7 @@ package de.ptrlx.oneshot.feature_diary.presentation.diary
 import android.content.Context
 import android.content.Intent
 import android.content.UriPermission
+import android.content.res.Resources
 import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.*
@@ -11,6 +12,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -19,6 +21,7 @@ import javax.inject.Inject
 
 import de.ptrlx.oneshot.feature_diary.domain.model.DiaryEntry
 import de.ptrlx.oneshot.feature_diary.domain.use_case.DiaryUseCases
+import de.ptrlx.oneshot.feature_diary.domain.use_case.diary_entry.ImportResult
 import de.ptrlx.oneshot.feature_diary.domain.util.DiaryFileManager
 import de.ptrlx.oneshot.feature_diary.domain.util.StatsType
 import de.ptrlx.oneshot.feature_diary.domain.util.imageBaseLocationKey
@@ -79,6 +82,8 @@ class DiaryViewModel @Inject constructor(
 
     var currentIsNewEntry: Boolean = true
         private set
+
+    private var lastImportResult: ImportResult? = null
 
     init {
         Log.d(LOG_TAG, "CREATED")
@@ -207,35 +212,66 @@ class DiaryViewModel @Inject constructor(
                 }
             }
             is DiaryEvent.ReadDBImport -> {
-                var success = false
-                fileManager?.let { fileManager ->
-                    currentImportDatabaseUri?.let { uri ->
-                        Log.d(LOG_TAG, "Importing entries from $uri")
-                        val importEntries = fileManager.readJSONExport(uri)
-                        if (importEntries.isNotEmpty()) {
-                            Log.d(LOG_TAG, importEntries.toString())
-                            success = true
-                            viewModelScope.launch {
-                                importEntries.forEach {
-                                    diaryUseCases.createUpdateDiaryEntry(it)
-                                    currentImportDatabaseUri = null
-                                    isSnackbarShowing = true
-                                    snackbarCause =
-                                        (if (success) SnackbarCause.SUCCESS else SnackbarCause.ERROR)
-                                }
-                            }
+                val uri = currentImportDatabaseUri
+                currentImportDatabaseUri = null
+                val importEntries = uri?.let { readImport(it) }
+                if (importEntries.isNullOrEmpty()) {
+                    showSnackbar(SnackbarCause.ERROR)
+                } else {
+                    Log.d(LOG_TAG, importEntries.toString())
+                    viewModelScope.launch {
+                        val result = try {
+                            diaryUseCases.importDiaryEntries(importEntries)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            Log.e(LOG_TAG, "Import failed", e)
+                            null
                         }
+                        lastImportResult = result
+                        showSnackbar(
+                            when {
+                                result == null -> SnackbarCause.ERROR
+                                result.skipped > 0 -> SnackbarCause.IMPORT_SKIPPED_ENTRIES
+                                else -> SnackbarCause.SUCCESS
+                            }
+                        )
                     }
-                }
-
-                if (!success) {
-                    currentImportDatabaseUri = null
-                    isSnackbarShowing = true
-                    snackbarCause = SnackbarCause.ERROR
                 }
             }
         }
     }
+
+    /**
+     * Read the entries of a JSON export.
+     *
+     * @return the entries, or null if no folder is set or the file cannot be read or decoded.
+     */
+    private fun readImport(uri: Uri): List<DiaryEntry>? {
+        val fileManager = fileManager ?: return null
+        Log.d(LOG_TAG, "Importing entries from $uri")
+        return try {
+            fileManager.readJSONExport(uri)
+        } catch (e: Exception) {
+            Log.e(LOG_TAG, "Could not read import file", e)
+            null
+        }
+    }
+
+    private fun showSnackbar(cause: SnackbarCause) {
+        snackbarCause = cause
+        isSnackbarShowing = true
+    }
+
+    /**
+     * Text of the snackbar for the current [snackbarCause].
+     */
+    fun snackbarMessage(resources: Resources): String =
+        snackbarCause.message(
+            resources,
+            imported = lastImportResult?.imported ?: 0,
+            skipped = lastImportResult?.skipped ?: 0
+        )
 
     /**
      * Call this function to start the flow of data into view model.

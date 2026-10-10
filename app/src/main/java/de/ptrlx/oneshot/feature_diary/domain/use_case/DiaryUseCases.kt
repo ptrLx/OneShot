@@ -15,6 +15,7 @@ import de.ptrlx.oneshot.feature_diary.domain.use_case.diary_settings.SetSettings
  * @property getStats Get statistics about happiness.
  * @property setSettingsValue Set a value in the settings datastore.
  * @property getSettingsString Get a value from the settings datastore.
+ * @property importDiaryEntries Import entries, skipping and counting invalid ones.
  */
 data class DiaryUseCases(
     val createUpdateDiaryEntry: CreateUpdateDiaryEntryUseCase,
@@ -24,5 +25,6 @@ data class DiaryUseCases(
     val getFlashbacks: GetFlashbacksUseCase,
     val getStats: GetStatsUseCase,
     val setSettingsValue: SetSettingsValue,
-    val getSettingsString: GetSettingsString
+    val getSettingsString: GetSettingsString,
+    val importDiaryEntries: ImportDiaryEntriesUseCase = ImportDiaryEntriesUseCase(createUpdateDiaryEntry)
 )

@@ -42,4 +42,8 @@
     <string name="days_ago_7">7 days ago</string>
     <string name="days_ago_14">14 days ago</string>
     <string name="flashbacks">Flashbacks</string>
+    <plurals name="snackbar_msg_import_skipped_entries">
+        <item quantity="one">Import finished: %1$d imported, %2$d invalid entry skipped</item>
+        <item quantity="other">Import finished: %1$d imported, %2$d invalid entries skipped</item>
+    </plurals>
 </resources>

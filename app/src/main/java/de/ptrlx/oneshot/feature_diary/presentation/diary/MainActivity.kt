@@ -97,7 +97,7 @@ class MainActivity : ComponentActivity() {
                             LaunchedEffect(viewModel.isSnackbarShowing) {
                                 try {
                                     when (scaffoldState.snackbarHostState.showSnackbar(
-                                        context.getString(viewModel.snackbarCause.msg()),
+                                        viewModel.snackbarMessage(context.resources),
                                         actionLabel = context.getString(viewModel.snackbarCause.actionLabel())
                                     )) {
                                         SnackbarResult.ActionPerformed -> {
