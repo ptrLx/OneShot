@@ -59,23 +59,21 @@ This is the test that matches the user's real situation: an installed old versio
 
 **Why we build the old version ourselves:** the published v1.1.1 APK is signed with the upstream key, so a CI build of HEAD cannot be installed over it. The job therefore builds `v1.1.1` from its tag and HEAD from the PR, both signed with the same throwaway CI test key. Signature continuity for real users is covered separately by the release flow (same key, increasing versionCode).
 
-**Environment:** `reactivecircus/android-emulator-runner` on Linux runners with KVM, `google_apis` system images (root available), API 29 (minSdk, Android 10) and the newest API level.
+**Environment:** `.github/workflows/upgrade-e2e.yml`, `reactivecircus/android-emulator-runner` on Linux runners with KVM, `google_apis` system images (root available), API 29 (minSdk, Android 10) and API 36. v1.1.1 is built from the commit F-Droid built (`a3f3b35`) in `debian:bullseye` with OpenJDK 11 and cached; HEAD is the PR's release build. Script: `scripts/ci/upgrade/upgrade-e2e.sh`, fixtures: `scripts/ci/upgrade/fixture.py` and `scripts/ci/upgrade/images/`.
 
 **Steps:**
 
-1. Install the old APK and launch it once so it creates its directories.
-2. Seed state as v1.1.1 would have written it:
-   - create a folder `/sdcard/OneShot` with fixture JPEGs named like real captures;
-   - grant the folder: drive the system folder picker with UI Automator once (`OpenDocumentTree`), which also writes the DataStore key, or with `adb root` push a prepared `diary_settings.preferences_pb` and grant the URI permission through the picker;
-   - with `adb root`, stop the app and push a fixture `diary_entry_db` (created from the v1 schema SQL with `sqlite3`, rows pointing at the fixture images);
-3. Record a canonical snapshot: `sqlite3 .dump` of the DB, the DataStore file hash, the persisted URI permissions (`dumpsys activity permissions`/`cmd uri`), file list and hashes of the folder.
-4. `adb install -r` the new APK (in-place update, keeps data), launch it, let it open the DB (runs migrations, if any).
-5. Record the snapshot again and compare: rows equal (or equal after the documented migration mapping), DataStore unchanged, permission still present, no image file changed or removed.
-6. UI checks with UI Automator: the diary shows the seeded entries, images render (not black, see #57), an export from the new app equals the fixture export semantically, and an import of the old export succeeds.
+1. Install the old APK and launch it once, so it creates its database.
+2. Seed state as v1.1.1 writes it (with `adb root`): the fixture rows (the same as in the Room migration test) inserted into the database the old app created, the DataStore file with `image_base_location` pointing at `/sdcard/OneShot`, six JPEGs named like real captures in that folder, and the persisted folder permission (`/data/system/urigrants.xml`, which the system reads at the next framework start).
+3. Launch the old app, open the diary, then record a canonical snapshot: schema version, identity hash and all rows of the database, the DataStore file hash, and the hashes of all images.
+4. `adb install -r` the new APK (in-place update; the log shows targetSdk changing), record the snapshot again, launch the new app, open the diary, record it a third time.
+5. Fail if any snapshot differs, the app crashed (logcat), fewer than six rows exist, or the new app shows fewer diary entries than the old one.
 
-Artifacts on failure: both snapshots, logcat, screenshots.
+Artifacts: snapshots, seed files, screenshots of the old and new diary, logcat.
 
-**When it runs:** on PRs labeled `data-touching` or touching the data-contract paths, nightly on master, and as a required check on release PRs. It is too slow (about 15 minutes per API level) for every PR.
+**Open:** the test does not yet check that images render. With the permission seeded through `urigrants.xml` the diary cards stay black in v1.1.1 and HEAD alike, although the system lists the persisted grant and the provider serves the files; failed images are invisible because the error icon is black on the black card. Follow-up: grant the folder through the system picker with UI Automator, make image errors visible and log them, then assert rendering (#57).
+
+**When it runs:** on every PR, on master and on pushes to the release branch (about 10 minutes per API level, in parallel to CI).
 
 ## Layer 5: manual release QA
 

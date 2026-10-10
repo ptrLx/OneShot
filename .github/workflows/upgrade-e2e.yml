@@ -1,0 +1,143 @@
+name: Upgrade E2E
+
+# Existing installations must upgrade in place without losing data (docs/modernization/TESTING.md).
+# Builds the last F-Droid release v1.1.1 the way F-Droid built it and the current state, signs both
+# with the same throwaway key, and runs scripts/ci/upgrade/upgrade-e2e.sh on the oldest and newest
+# supported Android versions.
+on:
+  pull_request:
+  push:
+    branches: [master, 'release-please--branches--master**']
+  workflow_dispatch:
+
+concurrency:
+  group: upgrade-e2e-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  # Commit F-Droid built for v1.1.1 (metadata/de.ptrlx.oneshot.yml), see RELEASING.md.
+  OLD_REF: a3f3b358fe56ac73b25b7810595004d7a7ba2140
+  OLD_APK: app/build/outputs/apk/release/app-release-unsigned.apk
+
+jobs:
+  old-release:
+    name: Build v1.1.1 (F-Droid environment)
+    runs-on: ubuntu-latest
+    container:
+      image: debian:bullseye
+      volumes:
+        - /usr/local/lib/android/sdk:/opt/android-sdk
+    env:
+      ANDROID_HOME: /opt/android-sdk
+    steps:
+      - uses: actions/cache@v6
+        id: cache
+        with:
+          path: old/OneShot-v1.1.1-unsigned.apk
+          key: oneshot-release-${{ env.OLD_REF }}
+      - name: Install Debian JDK
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          # Debian 11 left LTS in 2026: its packages are served from archive.debian.org now.
+          printf '%s\n' \
+            'deb http://archive.debian.org/debian bullseye main' \
+            'deb http://archive.debian.org/debian bullseye-updates main' \
+            'deb http://archive.debian.org/debian-security bullseye-security main' > /etc/apt/sources.list
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends openjdk-11-jdk-headless git ca-certificates unzip >/dev/null
+      - uses: actions/checkout@v7
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          ref: ${{ env.OLD_REF }}
+          path: src
+          persist-credentials: false
+      - name: Build unsigned release
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          cd src && ./gradlew --no-daemon assembleRelease
+          mkdir -p ../old && cp "$OLD_APK" ../old/OneShot-v1.1.1-unsigned.apk
+      - uses: actions/upload-artifact@v7
+        with:
+          name: old-release
+          path: old/OneShot-v1.1.1-unsigned.apk
+          if-no-files-found: error
+
+  upgrade:
+    name: Upgrade v1.1.1 to HEAD (API ${{ matrix.api-level }})
+    needs: old-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        # minSdk 29 and the newest supported Android
+        api-level: [29, 36]
+    env:
+      EMULATOR_OPTIONS: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+      - name: Build the current release
+        run: ./gradlew --no-daemon assembleRelease
+      - uses: actions/download-artifact@v8
+        with:
+          name: old-release
+          path: old
+      - name: Sign both releases with the same throwaway key
+        run: |
+          apksigner=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)/apksigner
+          keytool -genkeypair -keystore "$RUNNER_TEMP/e2e.p12" -storetype PKCS12 -storepass e2e-test \
+            -alias e2e -keyalg RSA -keysize 2048 -validity 1 -dname CN=upgrade-e2e
+          for pair in old/OneShot-v1.1.1-unsigned.apk:old.apk app/build/outputs/apk/release/app-release-unsigned.apk:new.apk; do
+            "$apksigner" sign --ks "$RUNNER_TEMP/e2e.p12" --ks-pass pass:e2e-test --ks-key-alias e2e \
+              --key-pass pass:e2e-test --out "${pair#*:}" "${pair%%:*}"
+          done
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: AVD cache
+        uses: actions/cache@v6
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ matrix.api-level }}-google_apis-x86_64-v1
+      - name: Create AVD snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: ${{ env.EMULATOR_OPTIONS }}
+          disable-animations: false
+          script: echo "AVD snapshot created"
+      - name: Upgrade test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save ${{ env.EMULATOR_OPTIONS }}
+          disable-animations: true
+          script: scripts/ci/upgrade/upgrade-e2e.sh old.apk new.apk
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: upgrade-api-${{ matrix.api-level }}
+          path: app/build/reports/upgrade/
+          if-no-files-found: ignore
