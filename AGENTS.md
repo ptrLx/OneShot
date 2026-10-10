@@ -10,7 +10,7 @@ Instructions for humans and coding agents working on OneShot, a privacy-first An
 
 ## Workflow
 
-- Plan and order of work: `docs/modernization/ROADMAP.md`; backlog: GitHub issues of the fork (epics #1 to #9).
+- Plan and order of work: `docs/modernization/ROADMAP.md`; backlog: GitHub issues.
 - One topic branch per issue, small PRs, squash merge only. The PR title becomes the commit message and must be a conventional commit (`feat:`, `fix:`, `build:`, `ci:`, `refactor:`, `docs:`, `test:`, `chore:`); release-please derives versions from it.
 - Never edit `CHANGELOG.md`, `.release-please-manifest.json`, `versionName` or `versionCode` by hand: release-please and `scripts/release/sync_version.py` own them.
 - No agent or tool attribution in commits, PRs or code comments.

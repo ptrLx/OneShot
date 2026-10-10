@@ -15,7 +15,7 @@ import java.io.IOException
 import java.time.LocalDate
 
 /**
- * JSON import with invalid entries (#84): valid entries are imported, invalid ones are skipped and
+ * JSON import with invalid entries: valid entries are imported, invalid ones are skipped and
  * counted, nothing is stored differently from a single create/update.
  */
 class ImportDiaryEntriesUseCaseTest {

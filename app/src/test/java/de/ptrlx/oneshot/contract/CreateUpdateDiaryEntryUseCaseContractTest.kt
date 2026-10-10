@@ -51,7 +51,7 @@ class CreateUpdateDiaryEntryUseCaseContractTest {
 
     @Test
     fun `checks the length only and not the pattern as current behavior`(): Unit = runBlocking {
-        // Names written under a locale with non-ASCII digits (#68) and any other 26 character name pass.
+        // Names written under a locale with non-ASCII digits and any other 26 character name pass.
         val arabicIndicDigits = "OneShot_٢٠٢٣٠٤٠٣١٠١٥٠٠.jpg"
         assertEquals(26, arabicIndicDigits.length)
         createUpdate(entry(arabicIndicDigits, LocalDate.of(2023, 4, 3)))

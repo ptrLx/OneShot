@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 GRADLE := ./gradlew --no-daemon
-REPO ?= ptrLxAI/OneShot
+REPO ?= ptrLx/OneShot
 BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
 APK_DIR := build/ci-apks
 

@@ -57,7 +57,7 @@ The release APK is built by the reusable workflow `sign-release.yml` in two jobs
 | Room / Hilt | 2.6.1 / 2.55 | Room 2.6.1 is the oldest Room whose kapt processor reads Kotlin 2.0 metadata; Hilt 2.55 is the newest Hilt that still depends on a Kotlin 2.0 stdlib (newer stdlib metadata breaks Room's processor) |
 | compileSdk | 34 (targetSdk 32, minSdk 29) | Room 2.6.1 requires compileSdk 34; runtime behavior follows targetSdk, which is unchanged |
 
-Baseline profiles: AGP packs `assets/dexopt/baseline.prof` and `baseline.profm` from the profiles shipped by libraries. Before AGP 8.1 the `.profm` listed the dex files in hash map order ([issuetracker 231837768](https://issuetracker.google.com/issues/231837768)), which v1.1.1 worked around with `app/fix-profm.gradle`. Since AGP 8.1 the profile generator sorts the dex files itself ([tools/base 2f2c6b3](https://android.googlesource.com/platform/tools/base/+/2f2c6b30b55e18e2672edf5ee8e8e583be759d3e)), so the script was removed with the AGP 8 upgrade (#26). The CI reproducibility job guards this; if the profiles ever differ again, F-Droid's documented fallback is to disable the `ArtProfile` tasks.
+Baseline profiles: AGP packs `assets/dexopt/baseline.prof` and `baseline.profm` from the profiles shipped by libraries. Before AGP 8.1 the `.profm` listed the dex files in hash map order ([issuetracker 231837768](https://issuetracker.google.com/issues/231837768)), which v1.1.1 worked around with `app/fix-profm.gradle`. Since AGP 8.1 the profile generator sorts the dex files itself ([tools/base 2f2c6b3](https://android.googlesource.com/platform/tools/base/+/2f2c6b30b55e18e2672edf5ee8e8e583be759d3e)), so the script was removed with the AGP 8 upgrade. The CI reproducibility job guards this; if the profiles ever differ again, F-Droid's documented fallback is to disable the `ArtProfile` tasks.
 
 ## Signing setup (`release` environment)
 
@@ -88,14 +88,14 @@ Protection rules for the `release` environment:
 
 Only then the gate passes and the release PR can be merged. For every other PR the gate passes immediately. Consequences:
 
-- **Fork:** its key is not in `AllowedAPKSigningKeys`, so the gate fails and release PRs stay blocked, as intended.
-- **Upstream:** with the original key in the environment the gate passes and the release PR can be merged; `release.yml` then signs the tagged commit with the same checks and attaches `OneShot.apk`.
+- **Another key** (for example a test key in the `release` environment): it is not in `AllowedAPKSigningKeys`, so the gate fails and release PRs stay blocked, as intended.
+- **The original key:** the gate passes and the release PR can be merged; `release.yml` then signs the tagged commit with the same checks and attaches `OneShot.apk`.
 - Pushes and PRs made with the default `GITHUB_TOKEN` do not start the gate (and PR checks show "approval required"). Set `RELEASE_PLEASE_TOKEN` so the gate runs automatically on every update of the release PR; otherwise start it with `make release-gate`.
 - Enable "Require branches to be up to date before merging", so the gated PR head equals the commit that gets tagged.
 
 Check the key locally before storing it: `keytool -list -v -keystore <file>` must show the alias with certificate SHA-256 `51:1C:89:33:…:04:56`.
 
-**Manual rehearsal:** start `sign-release.yml` manually from `master` (`make release-rehearsal`, optionally `REF=<tag or commit>`), approve the run, and download the signed `OneShot.apk` artifact. It proves that the secrets, the alias and the fingerprint are right without creating a release; with a test key it only warns that F-Droid would not accept the key (set the input `require-fdroid-key` to fail instead). The fork has no release key; its release PRs only validate the automation and are not merged.
+**Manual rehearsal:** start `sign-release.yml` manually from `master` (`make release-rehearsal`, optionally `REF=<tag or commit>`), approve the run, and download the signed `OneShot.apk` artifact. It proves that the secrets, the alias and the fingerprint are right without creating a release; with a test key it only warns that F-Droid would not accept the key (set the input `require-fdroid-key` to fail instead).
 
 ## Rules that keep F-Droid green
 
@@ -104,9 +104,9 @@ Check the key locally before storing it: `keytool -list -v -keystore <file>` mus
 - With AGP 8 or newer: `dependenciesInfo { includeInApk = false; includeInBundle = false }` and `vcsInfo { include = false }`.
 - Dependabot (`.github/dependabot.yml`) opens grouped weekly updates as `build(deps)` and `ci(deps)` PRs, which never trigger a release. Major updates of the Android Gradle plugin and Kotlin are ignored there and done by hand, together with the CI containers. The Gradle wrapper is also updated by hand, after checking which Gradle version the F-Droid buildserver supports.
 - No proprietary libraries (Google Play services, Firebase, Crashlytics), no prebuilt binaries in the repository except the validated Gradle wrapper jar, no toolchain auto-download.
-- Kotlin Multiplatform: iOS targets must not be configured on Linux builds unless explicitly enabled (#44), so the F-Droid build never downloads Kotlin/Native.
+- Kotlin Multiplatform: iOS targets must not be configured on Linux builds unless explicitly enabled, so the F-Droid build never downloads Kotlin/Native.
 - After the first release from the new pipeline, watch the F-Droid build log (monitor.f-droid.org) and, if the recipe needs changes, open a merge request on fdroiddata.
 
-## Upstream handover
+## Repository setup for releases
 
-Tracked in #19: create the `release` environment with its secrets and protection rules (see above) and run a signing rehearsal, enable Actions and "Allow GitHub Actions to create pull requests", set squash-only merges with the PR title as commit message, merge the fork's `master`, let release-please open the first release PR, merge it, and verify the published `OneShot.apk` with `reproduce-release.yml` before F-Droid picks it up.
+Create the `release` environment with its secrets and protection rules (see above) and run a signing rehearsal, enable Actions and "Allow GitHub Actions to create pull requests", set squash-only merges with the PR title as commit message, let release-please open the release PR, merge it, and verify the published `OneShot.apk` with `reproduce-release.yml` before F-Droid picks it up.

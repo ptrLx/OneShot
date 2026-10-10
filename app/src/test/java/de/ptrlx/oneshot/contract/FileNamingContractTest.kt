@@ -52,7 +52,7 @@ class FileNamingContractTest {
 
     @Test
     fun `names keep their shape in common locales with ASCII digits`() {
-        // The app formats with Locale.getDefault() (see #68). With ASCII digits every locale yields the
+        // The app formats with Locale.getDefault(). With ASCII digits every locale yields the
         // same name. Locales with other digits (for example Arabic-Indic) still yield 26 characters,
         // so the length check in CreateUpdateDiaryEntryUseCase accepts them, but the name then contains
         // non-ASCII digits: see CreateUpdateDiaryEntryUseCaseContractTest.

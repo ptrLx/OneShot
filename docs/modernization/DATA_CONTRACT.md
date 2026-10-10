@@ -37,7 +37,7 @@ Consequences: enum constants must never be renamed or removed (only added), the 
 ## 4. Image folder and files
 
 - The user picks a folder with `OpenDocumentTree`; the app takes a **persistable read/write URI permission** and releases all others (`DiaryViewModel`, event `SetImageBaseLocation`). The system keeps this grant across updates as long as package and signature stay the same; it is lost on uninstall and does not transfer with Android backup.
-- Images are created in that folder as `OneShot_yyyyMMddHHmmss.jpg` (`SimpleDateFormat` with the default locale, see #68). `CreateUpdateDiaryEntryUseCase` rejects any `relativePath` whose length is not **26**, which also applies to JSON import.
+- Images are created in that folder as `OneShot_yyyyMMddHHmmss.jpg` (`SimpleDateFormat` with the default locale). `CreateUpdateDiaryEntryUseCase` rejects any `relativePath` whose length is not **26**, which also applies to JSON import.
 - `DiaryFileManager.resolveUri` builds document URIs by string concatenation (`document/<tree path>%2F<filename>`) instead of resolving them. Any change here must be tested with real providers (internal storage, SD card).
 - Images live outside the app's private storage and survive uninstall. The app never deletes them automatically (maintainer decision, ptrLx/OneShot#11), except the empty placeholder file of an aborted camera capture.
 
@@ -50,11 +50,11 @@ Consequences: enum constants must never be renamed or removed (only added), the 
 ```
 
 - Import (`OpenDocument` with `application/json`) decodes the array and inserts every entry with `OnConflictStrategy.REPLACE`: an imported entry overwrites an existing entry of the same date. Unknown `happiness` values become `NOT_SPECIFIED`. Images are not part of the export.
-- Every export ever written must stay importable. A new format gets a version field and the importer keeps reading the old one (golden files in tests, #21).
+- Every export ever written must stay importable. A new format gets a version field and the importer keeps reading the old one (golden files in tests).
 
 ## 6. Backup
 
-`android:allowBackup="true"` with empty `backup_rules.xml` and `data_extraction_rules.xml`, so Android backup and device transfer include the database and DataStore but not the folder permission or the images (#69).
+`android:allowBackup="true"` with empty `backup_rules.xml` and `data_extraction_rules.xml`, so Android backup and device transfer include the database and DataStore but not the folder permission or the images.
 
 ## Change rules
 

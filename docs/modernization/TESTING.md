@@ -4,16 +4,16 @@ Goal: prove for every change that a user who updates from any released version (
 
 The strategy has five layers. Cheap layers run on every PR; expensive layers run on PRs labeled `data-touching` and before every release.
 
-| Layer | What it proves | Runs on | Issue |
-|---|---|---|---|
-| 0. Static guards | schema and data code did not change by accident | every PR | #11 |
-| 1. Contract unit tests | names, keys, enums and formats are still the old ones | every PR (JVM) | #20 |
-| 2. JSON golden files | every export ever written still imports identically | every PR (JVM) | #21 |
-| 3. Room migration tests | a v1 database opens and reads back identically with the current code | every PR (instrumented, emulator job) | #22 |
-| 4. Upgrade E2E | real APK upgrade v1.1.1 to HEAD on an emulator keeps everything | `data-touching` PRs, master nightly, release PRs | #23 |
-| 5. Manual release QA | real device, real F-Droid install, real folder provider | every release | #24 |
+| Layer | What it proves | Runs on |
+|---|---|---|
+| 0. Static guards | schema and data code did not change by accident | every PR |
+| 1. Contract unit tests | names, keys, enums and formats are still the old ones | every PR (JVM) |
+| 2. JSON golden files | every export ever written still imports identically | every PR (JVM) |
+| 3. Room migration tests | a v1 database opens and reads back identically with the current code | every PR (instrumented, emulator job) |
+| 4. Upgrade E2E | real APK upgrade v1.1.1 to HEAD on an emulator keeps everything | every PR, master and the release branch (emulator, API 29 and 36) |
+| 5. Manual release QA | real device, real F-Droid install, real folder provider | every release |
 
-## Layer 0: static guards (in CI since PR #75)
+## Layer 0: static guards
 
 - **Schema freeze:** Room exports the schema on every compile. CI fails when the build changes anything under `app/db-schema/`, and pins the identityHash of version 1.
 - **Data-contract guard:** PRs touching paths from `.github/data-contract-paths.txt` fail until the maintainer adds `data-change-approved`.
@@ -28,7 +28,7 @@ Pin every identifier from the data contract in plain JUnit tests so a rename fai
 - `DiaryEntryDatabase.DATABASE_NAME == "diary_entry_db"`, table and column names (read from the exported schema JSON)
 - DataStore name `diary_settings`, key `image_base_location`
 - `HappinessType.entries.map { it.name }` equals the six stored names in order
-- image filename pattern: generated names match `^OneShot_\d{14}\.jpg$` and have length 26 for a fixed clock and the `Locale.ROOT`; document the behavior for locales with non-ASCII digits (#68)
+- image filename pattern: generated names match `^OneShot_\d{14}\.jpg$` and have length 26 for a fixed clock and the `Locale.ROOT`; document the behavior for locales with non-ASCII digits
 - `Converters` round-trip `LocalDate` to epoch day for edge dates (1970-01-01, leap days, year 2100)
 
 ## Layer 2: JSON golden files (JVM, fast)
@@ -71,13 +71,13 @@ This is the test that matches the user's real situation: an installed old versio
 
 Artifacts: snapshots, seed files, screenshots of the old and new diary, logcat.
 
-**Open:** the test does not yet check that images render. With the permission seeded through `urigrants.xml` the diary cards stay black in v1.1.1 and HEAD alike, although the system lists the persisted grant and the provider serves the files; failed images are invisible because the error icon is black on the black card. Follow-up: grant the folder through the system picker with UI Automator, make image errors visible and log them, then assert rendering (#57).
+**Open:** the test does not yet check that images render. With the permission seeded through `urigrants.xml` the diary cards stay black in v1.1.1 and HEAD alike, although the system lists the persisted grant and the provider serves the files; failed images are invisible because the error icon is black on the black card. Follow-up: grant the folder through the system picker with UI Automator, make image errors visible and log them, then assert rendering.
 
 **When it runs:** on every PR, on master and on pushes to the release branch (about 10 minutes per API level, in parallel to CI).
 
 ## Layer 5: manual release QA
 
-Checklist in the release PR (template to add with #24): on a real phone with OneShot from F-Droid installed and real data, install the release candidate signed with the release key (upstream only) or verify the F-Droid update after publication:
+Checklist in the release PR: on a real phone with OneShot from F-Droid installed and real data, install the release candidate signed with the release key (upstream only) or verify the F-Droid update after publication:
 
 - entries, calendar, stats and flashbacks unchanged
 - images visible, including entries older than a year
@@ -87,4 +87,4 @@ Checklist in the release PR (template to add with #24): on a real phone with One
 
 ## UI regression tests
 
-Compose UI tests for the main flows (#25) and, later, screenshot tests (#73). They protect the M2 redesign but are not part of the data guarantee.
+Compose UI tests for the main flows and, later, screenshot tests. They protect the M2 redesign but are not part of the data guarantee.
