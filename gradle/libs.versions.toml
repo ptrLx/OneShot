@@ -1,7 +1,7 @@
 [versions]
 agp = "8.13.2"
 # Kotlin 2.3: Hilt 2.58 (last Hilt for AGP 8) reads Kotlin metadata up to 2.3.
-kotlin = "2.3.21"
+kotlin = "2.4.21"
 ksp = "2.3.12"
 hilt = "2.58"
 room = "2.8.5"
