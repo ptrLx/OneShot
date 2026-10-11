@@ -6,7 +6,7 @@ ksp = "2.3.12"
 hilt = "2.58"
 room = "2.8.5"
 # Newest BOM whose Compose 1.11 still builds with AGP 8 and compileSdk 36.
-compose-bom = "2026.06.01"
+compose-bom = "2026.09.00"
 lifecycle = "2.10.0"
 coroutines = "1.11.0"
 
