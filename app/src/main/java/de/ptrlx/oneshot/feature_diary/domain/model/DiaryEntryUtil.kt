@@ -6,9 +6,20 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.*
+import kotlinx.serialization.json.Json
 import java.time.LocalDate
 
 class InvalidDiaryEntryException(message: String) : Exception(message)
+
+/**
+ * The JSON configuration of the export format, used for both export and import
+ * (docs/modernization/DATA_CONTRACT.md, section 5).
+ *
+ * `ignoreUnknownKeys` lets this version read an export written by a later one that added fields,
+ * keeping the fields it knows instead of failing the whole file. It does not change what is written:
+ * the encoded bytes stay identical to the default configuration, which the golden files pin.
+ */
+val diaryExportJson = Json { ignoreUnknownKeys = true }
 
 /**
  * For serialization to JSON. Needed for Import / Export of database.

@@ -2,6 +2,7 @@ package de.ptrlx.oneshot.contract
 
 import de.ptrlx.oneshot.feature_diary.domain.model.DiaryEntry
 import de.ptrlx.oneshot.feature_diary.domain.model.InvalidDiaryEntryException
+import de.ptrlx.oneshot.feature_diary.domain.model.diaryExportJson
 import de.ptrlx.oneshot.feature_diary.domain.use_case.diary_entry.CreateUpdateDiaryEntryUseCase
 import de.ptrlx.oneshot.feature_diary.domain.util.HappinessType
 import kotlinx.coroutines.runBlocking
@@ -23,10 +24,12 @@ import java.time.LocalDate
  *
  * Fixtures live in `src/test/resources/export/` and are never edited, only added: every export ever
  * written by a released version must keep importing. All released versions (v1.0.0 to v1.1.1) share one
- * format, written by `DiaryEntrySerializer` through the default [Json] instance.
+ * format, written by `DiaryEntrySerializer` through [diaryExportJson].
  *
  * [export] and [import] mirror `DiaryFileManager.writeJSONExport` and `readJSONExport` without the
- * Android file access: `Json.encodeToString(entries)` written as UTF-8, `Json.decodeFromStream`.
+ * Android file access: `diaryExportJson.encodeToString(entries)` written as UTF-8, then
+ * `diaryExportJson.decodeFromStream`. Using the same instance as the app is the point: the byte
+ * comparisons below would catch a configuration change that alters the written format.
  * The export contains no timestamps or other nondeterministic data, so it is compared byte for byte.
  */
 class JsonExportGoldenTest {
@@ -36,9 +39,9 @@ class JsonExportGoldenTest {
 
     private fun fixtureBytes(name: String): ByteArray = fixture(name).use { it.readBytes() }
 
-    private fun export(entries: List<DiaryEntry>): ByteArray = Json.encodeToString(entries).toByteArray(Charsets.UTF_8)
+    private fun export(entries: List<DiaryEntry>): ByteArray = diaryExportJson.encodeToString(entries).toByteArray(Charsets.UTF_8)
 
-    private fun import(stream: InputStream): List<DiaryEntry> = stream.use { Json.decodeFromStream<List<DiaryEntry>>(it) }
+    private fun import(stream: InputStream): List<DiaryEntry> = stream.use { diaryExportJson.decodeFromStream<List<DiaryEntry>>(it) }
 
     private fun import(json: String): List<DiaryEntry> = import(json.byteInputStream(Charsets.UTF_8))
 
@@ -87,6 +90,23 @@ class JsonExportGoldenTest {
             entries.map { it.textContent },
         )
         assertEquals("From a newer version", entries.first().motivation)
+    }
+
+    @Test
+    fun `an export with keys this version does not know stays importable`() {
+        // A later version may add fields. Dropping them beats failing the whole file, and every field
+        // this version knows must still arrive unchanged (DATA_CONTRACT.md, section 5). The unknown
+        // values cover a scalar, an array and a nested object, so skipping has to handle nesting.
+        val entry = import(
+            """[{"date":19450,"created":1680516900,"dayOfYear":93,"relativePath":"OneShot_20230403101500.jpg","happiness":"VERY_HAPPY","motivation":"keep going","textContent":"A good day","formatVersion":2,"tags":["holiday","sun"],"location":{"lat":48.1,"lon":11.6}}]"""
+        ).single()
+        assertEquals(LocalDate.ofEpochDay(19450), entry.date)
+        assertEquals(1680516900L, entry.created)
+        assertEquals(93, entry.dayOfYear)
+        assertEquals("OneShot_20230403101500.jpg", entry.relativePath)
+        assertEquals(HappinessType.VERY_HAPPY, entry.happiness)
+        assertEquals("keep going", entry.motivation)
+        assertEquals("A good day", entry.textContent)
     }
 
     @Test
@@ -144,16 +164,17 @@ class JsonExportGoldenTest {
         val entry = DiaryEntry(LocalDate.of(2023, 4, 3), 1680516900L, 93, "OneShot_20230403101500.jpg", HappinessType.VERY_HAPPY, "", "A good day")
         assertEquals(
             """[{"date":19450,"created":1680516900,"dayOfYear":93,"relativePath":"OneShot_20230403101500.jpg","happiness":"VERY_HAPPY","motivation":"","textContent":"A good day"}]""",
-            Json.encodeToString(listOf(entry)),
+            diaryExportJson.encodeToString(listOf(entry)),
         )
     }
 
     @Test
-    fun `unknown keys make the current importer fail`() {
-        // Documents current behavior: the default Json instance rejects unknown keys, so an export that
-        // adds a field cannot be imported by v1.1.1. A future format change must account for this.
+    fun `unknown keys stay rejected by the importer as released up to v1_1_1`() {
+        // Not the behavior of this version any more, but still the behavior of every installation up to
+        // v1.1.1, which decoded with the default Json instance. That is the reason new fields have to be
+        // additive and optional: an older install cannot read an export that contains them at all.
         try {
-            import(
+            Json.decodeFromString<List<DiaryEntry>>(
                 """[{"version":2,"date":19450,"created":1680516900,"dayOfYear":93,"relativePath":"OneShot_20230403101500.jpg","happiness":"HAPPY","motivation":"","textContent":""}]"""
             )
             fail("unknown key was accepted")
@@ -163,7 +184,7 @@ class JsonExportGoldenTest {
 
     @Test
     fun `missing optional fields fall back to the entity defaults`() {
-        val entries = Json.decodeFromString<List<DiaryEntry>>(
+        val entries = diaryExportJson.decodeFromString<List<DiaryEntry>>(
             """[{"date":19450,"created":1680516900,"dayOfYear":93,"relativePath":"OneShot_20230403101500.jpg"}]"""
         )
         assertEquals(
