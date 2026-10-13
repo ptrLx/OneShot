@@ -1,7 +1,7 @@
 name: Emulator
 
 # Instrumented tests on an Android emulator (docs/modernization/TESTING.md, layer 3 and UI tests).
-# KVM-accelerated x86_64 emulator on the standard Linux runner; the booted AVD is cached as a snapshot.
+# KVM-accelerated x86_64 emulator on the standard Linux runner, cold booted on every run.
 on:
   pull_request:
   push:
@@ -46,35 +46,19 @@ jobs:
           cache-provider: basic
       - name: Build app and test APKs
         run: ./gradlew --no-daemon assembleDebug assembleDebugAndroidTest
-      - name: AVD cache
-        uses: actions/cache@v6
-        id: avd-cache
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-${{ matrix.api-level }}-google_apis-x86_64-v1
-      - name: Create AVD snapshot
-        if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: ${{ matrix.api-level }}
-          target: google_apis
-          arch: x86_64
-          force-avd-creation: false
-          emulator-options: ${{ env.EMULATOR_OPTIONS }}
-          disable-animations: false
-          script: echo "AVD snapshot created"
       - name: Run instrumented tests
+        # Below the 45 minute job timeout, so a stuck emulator fails visibly instead of burning a job.
+        timeout-minutes: 25
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api-level }}
           target: google_apis
           arch: x86_64
-          force-avd-creation: false
-          emulator-options: -no-snapshot-save ${{ env.EMULATOR_OPTIONS }}
+          # Cold boot: after loading a snapshot, sys.boot_completed is set before system services
+          # such as `input` are back, and the runner's first adb command fails at random.
+          emulator-options: -no-snapshot ${{ env.EMULATOR_OPTIONS }}
           disable-animations: true
-          script: ./gradlew --no-daemon connectedDebugAndroidTest
+          script: scripts/ci/with-emulator.sh ./gradlew --no-daemon connectedDebugAndroidTest
       - uses: actions/upload-artifact@v7
         if: always()
         with:
