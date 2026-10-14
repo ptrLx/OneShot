@@ -24,6 +24,19 @@ wait_boot() {
   until [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1 ]; do sleep 2; done
   sleep 5
 }
+# `adb root` restarts adbd, and right after a cold boot that restart can drop the connection before
+# the daemon answers ("adb: unable to connect for root: closed"), which failed the whole job. Retry
+# until the shell actually runs as root.
+adb_root() {
+  for _ in $(seq 1 10); do
+    adb root >/dev/null 2>&1 || true
+    adb wait-for-device
+    [ "$(adb shell id -u | tr -d '\r')" = 0 ] && return 0
+    sleep 2
+  done
+  echo "::error::adbd did not come up as root"
+  return 1
+}
 launch() { adb shell am start -W -n "$activity" | grep -E "Status|Error|LaunchState" || true; sleep "${1:-6}"; }
 tap() {
   adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
@@ -65,7 +78,7 @@ dump() {
 }
 
 step "Root and install the old release"
-adb root >/dev/null; wait_boot
+adb_root; wait_boot
 adb uninstall $pkg >/dev/null 2>&1 || true
 adb install "$old_apk"
 adb shell dumpsys package $pkg | grep -m2 -E "versionName|targetSdk"
@@ -102,7 +115,7 @@ adb push "$out/urigrants.xml" /data/system/urigrants.xml >/dev/null
 adb shell chown system:system /data/system/urigrants.xml
 adb shell restorecon /data/system/urigrants.xml
 adb shell stop; adb shell start; wait_boot     # the system reads the grants at boot
-adb root >/dev/null; wait_boot
+adb_root; wait_boot
 wait_app
 adb shell dumpsys activity permissions | grep -A3 "$pkg" | head -8 || true
 end
