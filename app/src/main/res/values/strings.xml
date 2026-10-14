@@ -6,6 +6,7 @@
     <string name="done">done</string>
     <string name="drag">drag</string>
     <string name="desc_img_card">Diary entry: %1$s</string>
+    <string name="msg_img_load_failed">Image could not be loaded</string>
     <string name="btn_import_img">Import image</string>
     <string name="msg_move_old_imgs">Please move old images manually to the new folder</string>
     <string name="btn_set_base_location">Set image file path</string>

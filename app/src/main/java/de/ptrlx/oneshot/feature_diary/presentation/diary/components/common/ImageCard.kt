@@ -1,10 +1,12 @@
 package de.ptrlx.oneshot.feature_diary.presentation.diary.components.common
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
+import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,16 +14,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import de.ptrlx.oneshot.R
 import de.ptrlx.oneshot.feature_diary.domain.model.DiaryEntry
+import de.ptrlx.oneshot.feature_diary.domain.util.HappinessType
 import de.ptrlx.oneshot.feature_diary.presentation.diary.DiaryViewModel
+
+private const val LOG_TAG = "ImageCard"
+
+/** Test tag of the overlay that replaces the photo when it cannot be loaded. */
+const val IMAGE_CARD_ERROR_TAG = "image-card-error"
 
 @Composable
 fun ImageCard(
@@ -30,8 +40,31 @@ fun ImageCard(
     entry: DiaryEntry,
     description: String,
     expandOnClick: Boolean = false
+) = ImageCard(
+    modifier = modifier,
+    model = viewModel.fileManager?.resolveUri(entry.relativePath),
+    relativePath = entry.relativePath,
+    happiness = entry.happiness,
+    description = description,
+    expandOnClick = expandOnClick
+)
+
+/**
+ * The card without the view model, so the states of the image load can be tested.
+ */
+@Composable
+internal fun ImageCard(
+    modifier: Modifier = Modifier,
+    model: Any?,
+    relativePath: String,
+    happiness: HappinessType,
+    description: String,
+    expandOnClick: Boolean = false
 ) {
     var expanded by remember { mutableStateOf(false) }
+    // A card whose photo is missing used to stay plain black: the error painter was a drawable tinted
+    // #000000 on a black box, and Coil's error was never logged either (#78).
+    var loadFailed by remember(model) { mutableStateOf(false) }
 
     Card(
         modifier = if (expandOnClick)
@@ -54,10 +87,14 @@ fun ImageCard(
         ) {
             AsyncImage(
                 modifier = Modifier.fillMaxWidth(),
-                model = viewModel.fileManager?.resolveUri(entry.relativePath),
+                model = model,
                 contentDescription = stringResource(R.string.desc_img_card, description),
-                error = painterResource(R.drawable.ic_baseline_error_24),
                 contentScale = if (!expanded) ContentScale.Crop else ContentScale.FillWidth,
+                onSuccess = { loadFailed = false },
+                onError = { state ->
+                    loadFailed = true
+                    Log.e(LOG_TAG, "Could not load the image of $relativePath", state.result.throwable)
+                }
             )
 
             if (!expanded) {
@@ -94,7 +131,29 @@ fun ImageCard(
                         .padding(12.dp),
                     contentAlignment = Alignment.BottomEnd
                 ) {
-                    Text(entry.happiness.emoticon(), style = TextStyle(fontSize = 16.sp))
+                    Text(happiness.emoticon(), style = TextStyle(fontSize = 16.sp))
+                }
+            }
+
+            // Last child, so the error stays readable above the gradient and the labels.
+            if (loadFailed) {
+                Column(
+                    modifier = Modifier
+                        .testTag(IMAGE_CARD_ERROR_TAG)
+                        .padding(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_baseline_error_24),
+                        contentDescription = null,
+                        tint = Color.White
+                    )
+                    Text(
+                        stringResource(R.string.msg_img_load_failed),
+                        style = TextStyle(color = Color.White, fontSize = 14.sp),
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }

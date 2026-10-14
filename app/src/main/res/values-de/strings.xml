@@ -7,6 +7,7 @@
     <string name="done">fertig</string>
     <string name="drag">ziehen</string>
     <string name="desc_img_card">Eintrag: %1$s</string>
+    <string name="msg_img_load_failed">Bild konnte nicht geladen werden</string>
     <string name="btn_import_img">Bild importieren</string>
     <string name="msg_move_old_imgs">Alte Bilder müssen manuell in den neuen Ordner kopiert werden</string>
     <string name="btn_set_base_location">Basisordner festlegen</string>
