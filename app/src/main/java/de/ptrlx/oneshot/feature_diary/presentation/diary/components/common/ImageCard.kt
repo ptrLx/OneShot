@@ -102,12 +102,12 @@ internal fun ImageCard(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(
+                            // Fractions, not pixels: `startY = 300f` was past the bottom of a card
+                            // shorter than 300 px, and a gradient that starts after it ends clamps
+                            // to its last color, so the whole card turned black over the photo.
                             brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    Color.Black
-                                ),
-                                startY = 300f
+                                0.55f to Color.Transparent,
+                                1f to Color.Black
                             )
                         )
                 )
