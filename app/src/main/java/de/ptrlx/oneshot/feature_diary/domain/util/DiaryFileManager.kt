@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.FileUtils
 import androidx.documentfile.provider.DocumentFile
 import de.ptrlx.oneshot.feature_diary.domain.model.DiaryEntry
+import de.ptrlx.oneshot.feature_diary.domain.model.diaryExportJson
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
@@ -114,7 +115,7 @@ class DiaryFileManager(val baseLocation: Uri, val context: Context) {
         file?.uri?.let { uri ->
             context.contentResolver.openOutputStream(uri)?.writer()?.let { writer ->
                 writer.write(
-                    Json.encodeToString(entries)
+                    diaryExportJson.encodeToString(entries)
                 )
                 writer.flush()
                 writer.close()
@@ -133,7 +134,7 @@ class DiaryFileManager(val baseLocation: Uri, val context: Context) {
     fun readJSONExport(uri: Uri): List<DiaryEntry> {
         var entries = emptyList<DiaryEntry>()
         context.contentResolver.openInputStream(uri)?.let { stream ->
-            entries = Json.decodeFromStream(stream)
+            entries = diaryExportJson.decodeFromStream(stream)
         }
         return entries
     }

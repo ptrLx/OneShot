@@ -50,6 +50,8 @@ Consequences: enum constants must never be renamed or removed (only added), the 
 ```
 
 - Import (`OpenDocument` with `application/json`) decodes the array and inserts every entry with `OnConflictStrategy.REPLACE`: an imported entry overwrites an existing entry of the same date. Unknown `happiness` values become `NOT_SPECIFIED`. Images are not part of the export.
+- Both directions go through `diaryExportJson` in `DiaryEntryUtil.kt`, configured with `ignoreUnknownKeys = true`. The importer therefore keeps the keys it knows and drops the rest, so an export written by a later version still imports here. Encoding is unaffected: the written bytes stay identical to the default configuration, pinned by the golden files.
+- Consequence for new fields: they must be additive and optional, never required to reconstruct an entry, because an installation that does not know them discards them silently and because every version up to v1.1.1 rejects an export containing them outright. Removing or renaming a key stays a format change that needs a version field.
 - Every export ever written must stay importable. A new format gets a version field and the importer keeps reading the old one (golden files in tests).
 
 ## 6. Backup
