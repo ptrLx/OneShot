@@ -21,7 +21,7 @@ Every change, without exception, must keep these three properties. They are chec
 ## Working model
 
 - **Branches and PRs:** one topic branch per issue (`ci/…`, `build/…`, `feat/…`, `fix/…`, `refactor/…`, `docs/…`), small PRs, **squash merge only** into `master`. The PR title is the squash commit message and must be a [conventional commit](https://www.conventionalcommits.org/) (checked by CI), because release-please derives versions and the changelog from it.
-- **CI is the build machine.** Every PR builds debug and unsigned release APKs (downloadable artifacts), runs unit tests, the emulator tests and all guards. A local Android SDK is not required.
+- **CI is the build machine.** Every PR builds debug and unsigned release APKs (downloadable artifacts), runs unit tests and the fast guards. The reproducible Debian build, the emulator tests and the upgrade test run on master and on the release branch, or on demand with `make verify-run`. A local Android SDK is not required.
 - **Labels:** `data-touching` marks backlog items that change persisted data. `data-change-approved` must be set by the maintainer before CI lets a PR touch data-contract paths.
 - **Releases:** release-please keeps a release PR open; the release gate rehearses signing on it and only lets it merge when F-Droid accepts the key. Details: [RELEASING.md](RELEASING.md).
 

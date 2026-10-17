@@ -51,11 +51,12 @@ The release APK is built by the reusable workflow `sign-release.yml` in two jobs
 | Component | Version | Why |
 |---|---|---|
 | JDK | 21 (Temurin on the runner, Debian OpenJDK in the containers) | default JDK of the F-Droid buildserver (Debian trixie) |
-| Gradle wrapper | 9.4.1, `distributionSha256Sum` pinned | newest Gradle release tested with AGP 8.13; F-Droid runs exactly the wrapper version and checks it against its Gradle transparency log |
-| Android Gradle plugin | 8.13.2 | last AGP 8 release; AGP 9 (built-in Kotlin, new DSL) and Hilt 2.59+ (needs AGP 9) are a separate step |
-| Kotlin | 2.0.21 with the Compose compiler Gradle plugin, strong skipping off | Gradle 9 needs Kotlin 2; Room 2.6.1 under kapt reads Kotlin metadata up to 2.0 |
-| Room / Hilt | 2.6.1 / 2.55 | Room 2.6.1 is the oldest Room whose kapt processor reads Kotlin 2.0 metadata; Hilt 2.55 is the newest Hilt that still depends on a Kotlin 2.0 stdlib (newer stdlib metadata breaks Room's processor) |
-| compileSdk | 34 (targetSdk 32, minSdk 29) | Room 2.6.1 requires compileSdk 34; runtime behavior follows targetSdk, which is unchanged |
+| Gradle wrapper | 9.4.1, `distributionSha256Sum` pinned | AGP 8 uses an internal API that Gradle 9.6 removed, so the wrapper stays at 9.5 or below; F-Droid runs exactly the wrapper version and checks it against its Gradle transparency log |
+| Android Gradle plugin | 8.13.2 | last AGP 8 release. AGP 9 (built-in Kotlin, new DSL) needs Gradle 9.5.0 or newer and compileSdk 37, and unlocks Hilt 2.59+, Kotlin 2.4 and Compose 1.12: separate step, see #79 |
+| Kotlin / KSP | 2.3.21 / 2.3.12, Compose compiler Gradle plugin, strong skipping off | Hilt 2.58 reads Kotlin metadata up to 2.3. Strong skipping stays off while composables read plain ViewModel properties; re-enable it together with UI tests |
+| Room / Hilt | 2.8.5 / 2.58 | both run as KSP processors since the kapt removal, with a byte-identical exported schema; Hilt 2.58 is the last release that works with AGP 8 |
+| Compose BOM | 2026.06.01 (Compose 1.11) | newest BOM whose `aar-metadata.properties` still asks for `minCompileSdk=35` and `minAndroidGradlePluginVersion=8.6.0`; Compose 1.12 requires compileSdk 37 and AGP 9.1 |
+| compileSdk | 36 (targetSdk 36, minSdk 29) | Android 16, reviewed for behavior changes with edge-to-edge, predictive back and the splash screen; minSdk 29 keeps Android 10 supported |
 
 Baseline profiles: AGP packs `assets/dexopt/baseline.prof` and `baseline.profm` from the profiles shipped by libraries. Before AGP 8.1 the `.profm` listed the dex files in hash map order ([issuetracker 231837768](https://issuetracker.google.com/issues/231837768)), which v1.1.1 worked around with `app/fix-profm.gradle`. Since AGP 8.1 the profile generator sorts the dex files itself ([tools/base 2f2c6b3](https://android.googlesource.com/platform/tools/base/+/2f2c6b30b55e18e2672edf5ee8e8e583be759d3e)), so the script was removed with the AGP 8 upgrade. The CI reproducibility job guards this; if the profiles ever differ again, F-Droid's documented fallback is to disable the `ArtProfile` tasks.
 
@@ -87,6 +88,8 @@ Protection rules for the `release` environment:
 3. The signed APK must have exactly the certificate configured in the environment, `apksigcopier compare` must succeed, and **F-Droid must accept the key**: the certificate SHA-256 must be listed in `AllowedAPKSigningKeys` of the live F-Droid recipe (fdroiddata).
 
 Only then the gate passes and the release PR can be merged. For every other PR the gate passes immediately. Consequences:
+
+The gate rehearses signing, nothing else. The slow suites do not run on pull requests, so before merging a release PR check that the `CI`, `Emulator` and `Upgrade E2E` runs **on the release-please branch** are green: those pushes trigger all three, including the reproducible Debian build and the upgrade test on API 29 and 36.
 
 - **Another key** (for example a test key in the `release` environment): it is not in `AllowedAPKSigningKeys`, so the gate fails and release PRs stay blocked, as intended.
 - **The original key:** the gate passes and the release PR can be merged; `release.yml` then signs the tagged commit with the same checks and attaches `OneShot.apk`.

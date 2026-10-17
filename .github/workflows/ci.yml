@@ -1,9 +1,12 @@
 name: CI
 
+# Pull requests get the fast guards only. The Debian rebuild, the emulator tests and the upgrade
+# test run on master and on the release branch, so a release is still covered by all of them
+# (docs/modernization/TESTING.md). Run them on a branch before merging with `make verify-run`.
 on:
   pull_request:
   push:
-    branches: [master]
+    branches: [master, 'release-please--branches--master**']
   workflow_dispatch:
 
 concurrency:
@@ -60,7 +63,9 @@ jobs:
 
   reproducible:
     # F-Droid rebuilds every release from source on Debian with Debian's OpenJDK and only publishes
-    # our signed OneShot.apk if its own build is identical. Prove that on every change.
+    # our signed OneShot.apk if its own build is identical. Proven on master and on the release
+    # branch rather than on every pull request, because it is one of the slow jobs.
+    if: github.event_name != 'pull_request'
     name: Reproducible (F-Droid-like Debian build)
     needs: build
     runs-on: ubuntu-latest
