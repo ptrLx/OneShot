@@ -4,8 +4,9 @@ name: Upgrade E2E
 # Builds the last F-Droid release v1.1.1 the way F-Droid built it and the current state, signs both
 # with the same throwaway key, and runs scripts/ci/upgrade/upgrade-e2e.sh on the oldest and newest
 # supported Android versions.
+# Not on pull requests: it builds v1.1.1 and runs two emulators, which would block merging. Runs on
+# master and on the release branch, and on demand for a branch (`make upgrade-run`).
 on:
-  pull_request:
   push:
     branches: [master, 'release-please--branches--master**']
   workflow_dispatch:

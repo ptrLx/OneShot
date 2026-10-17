@@ -40,6 +40,14 @@ check-version:  ## Check versionCode and fastlane changelog against versionName 
 ci-run:  ## Trigger the CI workflow for the current branch
 	gh workflow run ci.yml -R $(REPO) --ref $(BRANCH)
 
+emulator-run:  ## Trigger the instrumented tests for the current branch (they no longer run on PRs)
+	gh workflow run emulator.yml -R $(REPO) --ref $(BRANCH)
+
+upgrade-run:  ## Trigger the upgrade test for the current branch (it no longer runs on PRs)
+	gh workflow run upgrade-e2e.yml -R $(REPO) --ref $(BRANCH)
+
+verify-run: ci-run emulator-run upgrade-run  ## Trigger every suite for the current branch before merging
+
 ci-status:  ## Show the latest CI runs of the current branch
 	gh run list -R $(REPO) --branch $(BRANCH) --limit 5
 

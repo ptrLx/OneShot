@@ -14,7 +14,7 @@ Instructions for humans and coding agents working on OneShot, a privacy-first An
 - One topic branch per issue, small PRs, squash merge only. The PR title becomes the commit message and must be a conventional commit (`feat:`, `fix:`, `build:`, `ci:`, `refactor:`, `docs:`, `test:`, `chore:`); release-please derives versions from it.
 - Never edit `CHANGELOG.md`, `.release-please-manifest.json`, `versionName` or `versionCode` by hand: release-please and `scripts/release/sync_version.py` own them.
 - No agent or tool attribution in commits, PRs or code comments.
-- CI is the build machine (no local Android SDK required): use the `Makefile` targets (`make help`). Every PR must pass the build, schema freeze, F-Droid, APK, reproducibility and data-contract checks.
+- CI is the build machine (no local Android SDK required): use the `Makefile` targets (`make help`). Every PR must pass the build, schema freeze, F-Droid, APK and data-contract checks. The slow suites (reproducible Debian build, emulator, upgrade) run on master and on the release branch instead of blocking a merge; trigger them for a branch with `make verify-run` when a change could affect them.
 
 ## Code map
 

@@ -2,10 +2,11 @@ name: Emulator
 
 # Instrumented tests on an Android emulator (docs/modernization/TESTING.md, layer 3 and UI tests).
 # KVM-accelerated x86_64 emulator on the standard Linux runner, cold booted on every run.
+# Not on pull requests: booting two emulators is slow and would block merging. Runs on master and
+# on the release branch, and on demand for a branch (`make emulator-run`).
 on:
-  pull_request:
   push:
-    branches: [master]
+    branches: [master, 'release-please--branches--master**']
   workflow_dispatch:
 
 concurrency:

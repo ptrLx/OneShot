@@ -2,15 +2,15 @@
 
 Goal: prove for every change that a user who updates from any released version (today: v1.1.1 from F-Droid) keeps all entries, settings, the folder permission and the images, and that old JSON exports still import. The contract being protected is [DATA_CONTRACT.md](DATA_CONTRACT.md).
 
-The strategy has five layers. Cheap layers run on every PR; expensive layers run on PRs labeled `data-touching` and before every release.
+The strategy has five layers. Cheap layers run on every PR. The expensive ones (Debian rebuild, emulator, upgrade) run on master and on the release branch, and on demand for a branch with `make verify-run`, so they never block a merge but always precede a release.
 
 | Layer | What it proves | Runs on |
 |---|---|---|
 | 0. Static guards | schema and data code did not change by accident | every PR |
 | 1. Contract unit tests | names, keys, enums and formats are still the old ones | every PR (JVM) |
 | 2. JSON golden files | every export ever written still imports identically | every PR (JVM) |
-| 3. Room migration tests | a v1 database opens and reads back identically with the current code | every PR (instrumented, emulator job) |
-| 4. Upgrade E2E | real APK upgrade v1.1.1 to HEAD on an emulator keeps everything | every PR, master and the release branch (emulator, API 29 and 36) |
+| 3. Room migration tests | a v1 database opens and reads back identically with the current code | master and the release branch (instrumented, emulator job) |
+| 4. Upgrade E2E | real APK upgrade v1.1.1 to HEAD on an emulator keeps everything | master and the release branch (emulator, API 29 and 36) |
 | 5. Manual release QA | real device, real F-Droid install, real folder provider | every release |
 
 ## Layer 0: static guards
@@ -41,7 +41,7 @@ Implemented in `JsonExportGoldenTest` next to the Layer 1 tests. v1.0.0 to v1.1.
 
 ## Layer 3: Room migration tests (instrumented)
 
-In place: `app/src/androidTest/java/de/ptrlx/oneshot/migration/DiaryEntryDatabaseMigrationTest.kt`, run by the `Emulator` workflow on every PR (`./gradlew connectedDebugAndroidTest`); the `CI` build compiles it (`assembleDebugAndroidTest`).
+In place: `app/src/androidTest/java/de/ptrlx/oneshot/migration/DiaryEntryDatabaseMigrationTest.kt`, run by the `Emulator` workflow on master and on the release branch (`./gradlew connectedDebugAndroidTest`); every PR still compiles it, because the `CI` build runs `assembleDebugAndroidTest`.
 
 - `androidx.room:room-testing` (`MigrationTestHelper`) reads the exported schemas: `app/db-schema` is an asset directory of the `androidTest` source set.
 - `helper.createDatabase(TEST_DB, 1)` creates a v1 database from `1.json`; the rows are inserted with raw SQL exactly as v1.1.1 wrote them (epoch-day dates, epoch-second timestamps, enum names as text), covering every happiness value, edge dates, empty, multi-line, unicode and emoji text.
@@ -57,7 +57,7 @@ Pattern for a future schema version N (needs `data-change-approved`):
 
 This is the test that matches the user's real situation: an installed old version with data, upgraded in place.
 
-**Why we build the old version ourselves:** the published v1.1.1 APK is signed with the upstream key, so a CI build of HEAD cannot be installed over it. The job therefore builds `v1.1.1` from its tag and HEAD from the PR, both signed with the same throwaway CI test key. Signature continuity for real users is covered separately by the release flow (same key, increasing versionCode).
+**Why we build the old version ourselves:** the published v1.1.1 APK is signed with the upstream key, so a CI build of HEAD cannot be installed over it. The job therefore builds `v1.1.1` from its tag and HEAD from the branch under test, both signed with the same throwaway CI test key. Signature continuity for real users is covered separately by the release flow (same key, increasing versionCode).
 
 **Environment:** `.github/workflows/upgrade-e2e.yml`, `reactivecircus/android-emulator-runner` on Linux runners with KVM, `google_apis` system images (root available), API 29 (minSdk, Android 10) and API 36. v1.1.1 is built from the commit F-Droid built (`a3f3b35`) in `debian:bullseye` with OpenJDK 11 and cached; HEAD is the PR's release build. Script: `scripts/ci/upgrade/upgrade-e2e.sh`, fixtures: `scripts/ci/upgrade/fixture.py` and `scripts/ci/upgrade/images/`.
 
@@ -73,7 +73,7 @@ Artifacts: snapshots, seed files, screenshots of the old and new diary, logcat.
 
 **Open:** the test does not yet check that images render. With the permission seeded through `urigrants.xml` the diary cards stay black in v1.1.1 and HEAD alike, although the system lists the persisted grant and the provider serves the files; failed images are invisible because the error icon is black on the black card. Follow-up: grant the folder through the system picker with UI Automator, make image errors visible and log them, then assert rendering.
 
-**When it runs:** on every PR, on master and on pushes to the release branch (about 10 minutes per API level, in parallel to CI).
+**When it runs:** on master and on pushes to the release branch, and on demand for a branch (`make upgrade-run`). Not on pull requests: it builds v1.1.1 and boots two emulators, so it would block merging for the whole time.
 
 ## Layer 5: manual release QA
 

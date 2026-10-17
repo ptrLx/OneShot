@@ -88,6 +88,8 @@ Protection rules for the `release` environment:
 
 Only then the gate passes and the release PR can be merged. For every other PR the gate passes immediately. Consequences:
 
+The gate rehearses signing, nothing else. The slow suites do not run on pull requests, so before merging a release PR check that the `CI`, `Emulator` and `Upgrade E2E` runs **on the release-please branch** are green: those pushes trigger all three, including the reproducible Debian build and the upgrade test on API 29 and 36.
+
 - **Another key** (for example a test key in the `release` environment): it is not in `AllowedAPKSigningKeys`, so the gate fails and release PRs stay blocked, as intended.
 - **The original key:** the gate passes and the release PR can be merged; `release.yml` then signs the tagged commit with the same checks and attaches `OneShot.apk`.
 - Pushes and PRs made with the default `GITHUB_TOKEN` do not start the gate (and PR checks show "approval required"). Set `RELEASE_PLEASE_TOKEN` so the gate runs automatically on every update of the release PR; otherwise start it with `make release-gate`.
