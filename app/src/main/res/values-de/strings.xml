@@ -5,6 +5,7 @@
     <string name="btn_capture_today">Kamara öffnen</string>
     <string name="delete">löschen</string>
     <string name="done">fertig</string>
+    <string name="share">teilen</string>
     <string name="drag">ziehen</string>
     <string name="desc_img_card">Eintrag: %1$s</string>
     <string name="msg_img_load_failed">Bild konnte nicht geladen werden</string>

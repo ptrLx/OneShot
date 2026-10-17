@@ -1,13 +1,20 @@
 package de.ptrlx.oneshot.feature_diary.domain.util
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.FileUtils
+import androidx.core.content.FileProvider
 import androidx.documentfile.provider.DocumentFile
 import de.ptrlx.oneshot.feature_diary.domain.model.DiaryEntry
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.InputStream
 
 
 class DiaryFileManager(val baseLocation: Uri, val context: Context) {
@@ -100,6 +107,27 @@ class DiaryFileManager(val baseLocation: Uri, val context: Context) {
      */
     fun deleteImage(filename: String) {
         baseFolder?.findFile(filename)?.delete()
+    }
+
+    /**
+     * Shares an image from baseFolder.
+     *
+     * @param filename Filename of image in baseFolder
+     */
+    fun shareImage(filename: String) {
+        // Erstelle eine Uri für die Bilddatei
+        val uri = resolveUri(filename)
+
+        // Erstelle den Intent zum Teilen des Bildes
+        val shareIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            putExtra(Intent.EXTRA_STREAM, uri)
+            type = "image/jpeg" // oder der richtige MIME-Typ für dein Bild
+            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+        }
+
+        // Starte den Intent
+        context.startActivity(Intent.createChooser(shareIntent, "Bild teilen"))
     }
 
     /**

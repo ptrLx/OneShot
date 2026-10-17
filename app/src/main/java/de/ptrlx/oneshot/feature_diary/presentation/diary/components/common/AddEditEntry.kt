@@ -12,6 +12,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -95,6 +96,16 @@ fun AddEditEntryModalBottomSheetContent(
                 .size(32.dp)
                 .clickable {
                     viewModel.onEvent(DiaryEvent.CaptureUpdateEntry)
+                })
+        Icon(
+            Icons.Default.Share,
+            contentDescription = stringResource(R.string.share),
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(16.dp)
+                .size(32.dp)
+                .clickable {
+                    viewModel.onEvent(DiaryEvent.CaptureShare)
                 })
         Column(
             modifier = Modifier.fillMaxWidth(),

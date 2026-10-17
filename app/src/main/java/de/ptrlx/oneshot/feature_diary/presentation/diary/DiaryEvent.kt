@@ -21,6 +21,7 @@ sealed class DiaryEvent {
     object ReadDBImport : DiaryEvent()
     object CaptureImageAborted : DiaryEvent()
     object CaptureUpdateEntry : DiaryEvent()
+    object CaptureShare : DiaryEvent()
     object SnackbarDismissed : DiaryEvent()
     object ImageSaved : DiaryEvent()
 }

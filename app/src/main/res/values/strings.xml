@@ -4,6 +4,7 @@
     <string name="btn_capture_today">Capture today</string>
     <string name="delete">delete</string>
     <string name="done">done</string>
+    <string name="share">share</string>
     <string name="drag">drag</string>
     <string name="desc_img_card">Diary entry: %1$s</string>
     <string name="msg_img_load_failed">Image could not be loaded</string>
