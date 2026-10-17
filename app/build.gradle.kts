@@ -17,7 +17,7 @@ android {
         targetSdk = 36
         // F-Droid reads both with regexes: keep them literal and here. release-please and
         // scripts/release/sync_version.py update them.
-        versionCode = 111
+        versionCode = 10200
         versionName = "1.2.0" // x-release-please-version
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

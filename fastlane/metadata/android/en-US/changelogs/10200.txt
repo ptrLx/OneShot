@@ -1,0 +1,10 @@
+New features:
+• branding: add script-generated logo v2 with themed icon
+• ui: target Android 16 with edge-to-edge, predictive back and a splash screen
+Bug fixes:
+• import exports that contain keys this version does not know (#85)
+• import valid entries of a JSON export and report skipped invalid ones
+• Sort baseline.profm for reproducible builds
+• Sort baseline.profm for reproducible builds
+• ui: show and log an error when a photo cannot be loaded (#86)
+• ui: show the 'not specified' face on An…
