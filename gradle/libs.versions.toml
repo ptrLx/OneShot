@@ -8,6 +8,7 @@ room = "2.8.5"
 # Newest BOM whose Compose 1.11 still builds with AGP 8 and compileSdk 36.
 compose-bom = "2026.06.01"
 lifecycle = "2.10.0"
+paging = "3.3.6"
 coroutines = "1.11.0"
 
 [libraries]
@@ -29,9 +30,13 @@ androidx-activity-compose = "androidx.activity:activity-compose:1.13.0"
 androidx-navigation-compose = "androidx.navigation:navigation-compose:2.9.8"
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 
+androidx-paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "paging" }
+androidx-paging-compose = { module = "androidx.paging:paging-compose", version.ref = "paging" }
+
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+room-paging = { module = "androidx.room:room-paging", version.ref = "room" }
 room-testing = { module = "androidx.room:room-testing", version.ref = "room" }
 
 androidx-datastore-preferences = "androidx.datastore:datastore-preferences:1.2.1"
