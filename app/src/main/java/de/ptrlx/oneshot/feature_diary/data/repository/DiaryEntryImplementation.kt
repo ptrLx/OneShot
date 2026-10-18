@@ -15,6 +15,10 @@ class DiaryEntryImplementation(
         return dao.getDiaryEntries()
     }
 
+    override suspend fun getAllEntriesOnce(): List<DiaryEntry> {
+        return dao.getAllEntriesOnce()
+    }
+
     override fun getDiaryEntries(keyword: String): Flow<List<DiaryEntry>> {
         return dao.getDiaryEntries(keyword)
     }

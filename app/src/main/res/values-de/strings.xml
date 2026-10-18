@@ -26,6 +26,7 @@
     <string name="btn_import_db">Datenbank importieren</string>
     <string name="open_source">Open Source Lizenzen</string>
     <string name="snackbar_msg_entry_deleted">Eintrag gelöscht!</string>
+    <string name="snackbar_msg_nothing_to_export">Noch nichts zum Exportieren</string>
     <string name="snackbar_msg_success">Erfolg!</string>
     <string name="snackbar_msg_error">Fehler!</string>
     <string name="snackbar_action_undo">RÜCKGÄNGIG</string>

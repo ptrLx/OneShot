@@ -23,6 +23,7 @@ class InMemoryDiaryEntryRepository : DiaryEntryRepository {
     }
 
     override fun getDiaryEntries(): Flow<List<DiaryEntry>> = unsupported()
+    override suspend fun getAllEntriesOnce(): List<DiaryEntry> = entries.values.toList()
     override fun getDiaryEntries(keyword: String): Flow<List<DiaryEntry>> = unsupported()
     override fun getDiaryEntries(happiness: HappinessType): Flow<List<DiaryEntry>> = unsupported()
     override fun getDiaryEntries(keyword: String, happiness: HappinessType): Flow<List<DiaryEntry>> = unsupported()

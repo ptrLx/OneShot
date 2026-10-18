@@ -14,6 +14,7 @@
     <string name="route_diary">Diary</string>
     <string name="route_statistics">Statistics</string>
     <string name="snackbar_msg_entry_deleted">Entry deleted!</string>
+    <string name="snackbar_msg_nothing_to_export">Nothing to export yet</string>
     <string name="snackbar_msg_success">Success!</string>
     <string name="snackbar_msg_error">Error!</string>
     <string name="snackbar_action_undo">UNDO</string>

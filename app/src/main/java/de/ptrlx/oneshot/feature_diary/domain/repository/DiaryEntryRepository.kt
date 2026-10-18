@@ -7,6 +7,7 @@ import java.time.LocalDate
 
 interface DiaryEntryRepository {
     fun getDiaryEntries(): Flow<List<DiaryEntry>>
+    suspend fun getAllEntriesOnce(): List<DiaryEntry>
     fun getDiaryEntries(keyword: String): Flow<List<DiaryEntry>>
     fun getDiaryEntries(happiness: HappinessType): Flow<List<DiaryEntry>>
     fun getDiaryEntries(keyword: String, happiness: HappinessType): Flow<List<DiaryEntry>>

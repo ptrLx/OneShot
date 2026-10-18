@@ -53,6 +53,7 @@ class AppModule {
             deleteDiaryEntry = DeleteDiaryEntryUseCase(diaryEntryRepository),
             getCalenderMonth = GetCalenderMonthUseCase(diaryEntryRepository),
             getDiaryEntries = GetDiaryEntriesUseCase(diaryEntryRepository),
+            getDiarySummary = GetDiarySummaryUseCase(diaryEntryRepository),
             getFlashbacks = GetFlashbacksUseCase(diaryEntryRepository),
             getStats = GetStatsUseCase(diaryEntryRepository),
             setSettingsValue = SetSettingsValue(diarySettingsRepository),
