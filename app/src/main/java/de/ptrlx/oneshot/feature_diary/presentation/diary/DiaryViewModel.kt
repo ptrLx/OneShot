@@ -43,8 +43,14 @@ class DiaryViewModel @Inject constructor(
 
     var isSnackbarShowing: Boolean by mutableStateOf(false)
 
-    var modalBottomSheetShowEvent: Boolean by mutableStateOf(false)
-    var modalBottomSheetHideEvent: Boolean by mutableStateOf(false)
+    /**
+     * Whether the add/edit sheet is open.
+     *
+     * Material 3 shows a modal sheet by composing it, so one flag replaces the former pair of
+     * show and hide events plus the separate "new dialog" marker.
+     */
+    var isEntrySheetVisible: Boolean by mutableStateOf(false)
+        private set
 
 //todo
 //    private var searchQuery: String by mutableStateOf("")
@@ -56,8 +62,6 @@ class DiaryViewModel @Inject constructor(
     var currentImageAddEditEntry: DiaryEntry? by mutableStateOf(null)
         private set
     var currentImportDatabaseUri: Uri? by mutableStateOf(null)
-
-    var newModalDialog: Boolean by mutableStateOf(false)
 
     var entries: List<DiaryEntry> by mutableStateOf(emptyList())
         private set
@@ -375,14 +379,15 @@ class DiaryViewModel @Inject constructor(
     }
 
     private fun hideModalBottomSheet() {
-//        newModalDialog = false => will be set in main activity automatically
-        modalBottomSheetHideEvent = true
-        modalBottomSheetShowEvent = false
+        isEntrySheetVisible = false
+    }
+
+    /** Called when the sheet is dismissed by swiping it away or tapping outside it. */
+    fun onEntrySheetDismissed() {
+        isEntrySheetVisible = false
     }
 
     private fun showModalBottomSheet() {
-        newModalDialog = true
-        modalBottomSheetShowEvent = true
-        modalBottomSheetHideEvent = false
+        isEntrySheetVisible = true
     }
 }

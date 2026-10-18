@@ -7,7 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -53,7 +53,7 @@ fun BottomNavigationBar(
     ) {
         Row(
             modifier = modifier
-                .background(MaterialTheme.colors.background)
+                .background(MaterialTheme.colorScheme.background)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
@@ -87,10 +87,10 @@ private fun AddItem(
     } == true
 
     val background =
-        if (selected) MaterialTheme.colors.secondary else MaterialTheme.colors.background
+        if (selected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.background
 
     val contentColor =
-        if (selected) MaterialTheme.colors.onSecondary else MaterialTheme.colors.onBackground
+        if (selected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onBackground
 
     Box(
         modifier = Modifier
@@ -137,11 +137,11 @@ private fun AddItem(
 fun Navigation(
     viewModel: DiaryViewModel,
     controller: NavHostController,
+    screenModifier: Modifier = Modifier,
 ) {
-    // do not overlay with bottom nav bar
-    val modifier = Modifier
-        .fillMaxSize()
-        .padding(bottom = 48.dp)
+    // The Scaffold reports how much space the bars take, so the content no longer guesses it
+    // with a hardcoded bottom padding.
+    val modifier = screenModifier.fillMaxSize()
 
     NavHost(navController = controller, startDestination = "home") {
         composable("home") {

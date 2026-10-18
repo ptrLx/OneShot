@@ -7,9 +7,10 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Card
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -73,8 +74,8 @@ fun StreakCount(
                 else ""
             }\uD83C\uDF89",
             //todo extract string
-            style = MaterialTheme.typography.h5,
-            color = MaterialTheme.colors.primary,
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Bold
         )
     }
@@ -94,7 +95,7 @@ fun StreakCalendar(
             text = stringResource(
                 R.string.last_28_days
             ),
-            style = MaterialTheme.typography.h4,
+            style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
         )
 
@@ -129,15 +130,15 @@ fun HappinessCalendarEntry(
     val entry = viewModel.last28Days[index].second
 
     val background = entry?.let {
-        MaterialTheme.colors.secondary
+        MaterialTheme.colorScheme.secondary
     } ?: run {
-        MaterialTheme.colors.error
+        MaterialTheme.colorScheme.error
     }
 
     val onColor = entry?.let {
-        MaterialTheme.colors.onSecondary
+        MaterialTheme.colorScheme.onSecondary
     } ?: run {
-        MaterialTheme.colors.onError
+        MaterialTheme.colorScheme.onError
     }
 
     val myModifier = (entry?.let {
@@ -154,7 +155,7 @@ fun HappinessCalendarEntry(
 
     Card(
         modifier = myModifier,
-        backgroundColor = background
+        colors = CardDefaults.cardColors(containerColor = background)
     ) {
         Column(
             Modifier.fillMaxSize(),

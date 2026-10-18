@@ -8,7 +8,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
+import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Done
@@ -107,8 +107,8 @@ fun AddEditEntryModalBottomSheetContent(
 
             Spacer(modifier = Modifier.size(18.dp))
 
-            if (viewModel.newModalDialog && entry != null)
-                AnimatedVisibility(visible = (viewModel.newModalDialog)) {
+            if (entry != null)
+                AnimatedVisibility(visible = true) {
                     ImageCard(
                         modifier = Modifier.padding(16.dp),
                         viewModel = viewModel,

@@ -2,9 +2,9 @@ package de.ptrlx.oneshot.feature_diary.presentation.diary.components.home
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
@@ -39,7 +39,7 @@ fun HomeTop(
 
             Text(
                 text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.h3,
+                style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.Bold
             )
 
@@ -52,13 +52,13 @@ fun HomeTop(
                             launchSingleTop = true
                         }
                     },
-                tint = MaterialTheme.colors.onBackground
+                tint = MaterialTheme.colorScheme.onBackground
             )
         }
 
         Text(
             text = stringResource(R.string.app_slogan),
-            style = MaterialTheme.typography.body1
+            style = MaterialTheme.typography.bodyLarge
         )
     }
 }
