@@ -1,24 +1,25 @@
 package de.ptrlx.oneshot.feature_diary.presentation.diary
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
@@ -29,16 +30,14 @@ import de.ptrlx.oneshot.feature_diary.presentation.diary.components.common.AddEd
 import de.ptrlx.oneshot.feature_diary.presentation.diary.util.BottomNavItem
 import de.ptrlx.oneshot.ui.theme.OneShotTheme
 
-
 @AndroidEntryPoint
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
-    private val LOG_TAG = "MainActivity"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        // Draw behind the system bars (enforced from targetSdk 35); the layout below pads the
+        // Draw behind the system bars (enforced from targetSdk 35); the Scaffold below pads the
         // content by the bar, cutout and keyboard insets.
         enableEdgeToEdge()
 
@@ -47,89 +46,63 @@ class MainActivity : ComponentActivity() {
                 val viewModel: DiaryViewModel = hiltViewModel()
                 viewModel.startGetEntriesJobs(LocalContext.current)
                 val navController = rememberNavController()
-                val sheetState =
-                    rememberModalBottomSheetState(
-                        initialValue = ModalBottomSheetValue.Hidden
-                    )
-                ModalBottomSheetLayout(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colors.background)
-                        .windowInsetsPadding(WindowInsets.safeDrawing),
-                    sheetState = sheetState,
-                    sheetShape = RoundedCornerShape(16.dp, 16.dp, 0.dp, 0.dp),
-                    sheetContent = {
-                        AddEditEntryModalBottomSheetContent(
-                            viewModel = viewModel
+                val snackbarHostState = remember { SnackbarHostState() }
+                val sheetState = rememberModalBottomSheetState()
+
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    snackbarHost = { SnackbarHost(snackbarHostState) },
+                    bottomBar = {
+                        BottomNavigationBar(
+                            items = listOf(
+                                BottomNavItem(
+                                    name = stringResource(R.string.route_home),
+                                    route = "home",
+                                    painter = painterResource(id = R.drawable.ic_baseline_cottage_24)
+                                ),
+                                BottomNavItem(
+                                    name = stringResource(R.string.route_diary),
+                                    route = "diary",
+                                    painter = painterResource(id = R.drawable.ic_baseline_photo_library_24)
+                                ),
+                                BottomNavItem(
+                                    name = stringResource(R.string.route_statistics),
+                                    route = "stats",
+                                    painter = painterResource(id = R.drawable.ic_baseline_leaderboard_24)
+                                ),
+                            ),
+                            navController = navController
                         )
                     }
-                ) {
-                    val scaffoldState = rememberScaffoldState()
-                    Scaffold(
-                        modifier = Modifier.fillMaxSize(),
-                        scaffoldState = scaffoldState,
-                        bottomBar = {
-                            BottomNavigationBar(
-                                items = listOf(
-                                    BottomNavItem(
-                                        name = stringResource(R.string.route_home),
-                                        route = "home",
-                                        painter = painterResource(id = R.drawable.ic_baseline_cottage_24)
-                                    ),
-                                    BottomNavItem(
-                                        name = stringResource(R.string.route_diary),
-                                        route = "diary",
-                                        painter = painterResource(id = R.drawable.ic_baseline_photo_library_24)
-                                    ),
-                                    BottomNavItem(
-                                        name = stringResource(R.string.route_statistics),
-                                        route = "stats",
-                                        painter = painterResource(id = R.drawable.ic_baseline_leaderboard_24)
-                                    ),
-                                ),
-                                navController = navController
+                ) { innerPadding ->
+                    Navigation(viewModel, navController, Modifier.padding(innerPadding))
+                }
+
+                if (viewModel.isSnackbarShowing) {
+                    val context = LocalContext.current
+                    LaunchedEffect(viewModel.isSnackbarShowing) {
+                        try {
+                            val result = snackbarHostState.showSnackbar(
+                                message = viewModel.snackbarMessage(context.resources),
+                                actionLabel = context.getString(viewModel.snackbarCause.actionLabel())
                             )
-                        },
-
-                        ) { _ ->
-                        if (viewModel.isSnackbarShowing) {
-                            val context = LocalContext.current
-                            LaunchedEffect(viewModel.isSnackbarShowing) {
-                                try {
-                                    when (scaffoldState.snackbarHostState.showSnackbar(
-                                        viewModel.snackbarMessage(context.resources),
-                                        actionLabel = context.getString(viewModel.snackbarCause.actionLabel())
-                                    )) {
-                                        SnackbarResult.ActionPerformed -> {
-                                            viewModel.onEvent(DiaryEvent.SnackbarDismissed)
-                                        }
-                                        else -> {}
-                                    }
-                                } finally {
-                                    viewModel.isSnackbarShowing = false
-                                }
+                            if (result == SnackbarResult.ActionPerformed) {
+                                viewModel.onEvent(DiaryEvent.SnackbarDismissed)
                             }
+                        } finally {
+                            viewModel.isSnackbarShowing = false
                         }
+                    }
+                }
 
-                        if (viewModel.modalBottomSheetHideEvent) {
-                            Log.d(LOG_TAG, "Hide modal bottom-sheet")
-                            LaunchedEffect(viewModel.modalBottomSheetHideEvent) {
-                                sheetState.hide()
-                                viewModel.modalBottomSheetHideEvent = false
-                            }
-                        } else if (viewModel.modalBottomSheetShowEvent) {
-                            Log.d(LOG_TAG, "Show modal bottom-sheet")
-                            LaunchedEffect(viewModel.modalBottomSheetShowEvent) {
-                                sheetState.show()
-                                viewModel.modalBottomSheetShowEvent = false
-                            }
-                            //In case sheet was dismissed by clicking outside of it
-                        } else if (!sheetState.isVisible) {
-                            Log.d(LOG_TAG, "Dismissed modal bottom-sheet")
-                            viewModel.newModalDialog = false
-                        }
-
-                        Navigation(viewModel, navController)
+                // Composing the sheet is what shows it in Material 3, which is why the former
+                // show and hide events collapse into this one condition.
+                if (viewModel.isEntrySheetVisible) {
+                    ModalBottomSheet(
+                        onDismissRequest = { viewModel.onEntrySheetDismissed() },
+                        sheetState = sheetState
+                    ) {
+                        AddEditEntryModalBottomSheetContent(viewModel = viewModel)
                     }
                 }
             }

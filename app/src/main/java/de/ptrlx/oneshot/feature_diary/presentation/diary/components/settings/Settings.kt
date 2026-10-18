@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -91,20 +91,20 @@ fun SettingsButtons(
 @Composable
 fun AboutText(modifier: Modifier = Modifier) {
     val bodyStyle = TextStyle(
-        color = MaterialTheme.colors.onBackground,
+        color = MaterialTheme.colorScheme.onBackground,
         fontSize = 14.sp
     )
 
     Column(modifier = modifier) {
         Text(
             text = stringResource(R.string.thank_you_text),
-            style = MaterialTheme.typography.h4
+            style = MaterialTheme.typography.headlineMedium
         )
         Spacer(modifier = Modifier.size(8.dp))
 
         Text(
             text = stringResource(R.string.about),
-            style = MaterialTheme.typography.h5,
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
         Text(
@@ -115,7 +115,7 @@ fun AboutText(modifier: Modifier = Modifier) {
 
         Text(
             text = stringResource(R.string.privacy),
-            style = MaterialTheme.typography.h5,
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
         Text(
@@ -126,7 +126,7 @@ fun AboutText(modifier: Modifier = Modifier) {
 
         Text(
             text = stringResource(R.string.license),
-            style = MaterialTheme.typography.h5,
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
         val gitUrl = stringResource(R.string.git_url)
@@ -135,7 +135,7 @@ fun AboutText(modifier: Modifier = Modifier) {
             append(" Fork me on ")
             withStyle(
                 style = SpanStyle(
-                    color = MaterialTheme.colors.primary,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
                 )
             ) {
@@ -167,7 +167,7 @@ fun AboutText(modifier: Modifier = Modifier) {
 
         Text(
             text = stringResource(R.string.open_source),
-            style = MaterialTheme.typography.h5,
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
         Text(
@@ -221,28 +221,28 @@ fun ImportDatabaseButton(
                 title = {
                     Text(
                         stringResource(R.string.qst_import_db),
-                        style = MaterialTheme.typography.h5,
-                        color = MaterialTheme.colors.error
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.error
                     )
                 },
                 text = { Text(stringResource(R.string.warn_import_db)) },
                 confirmButton = {
                     Button(
-                        colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.error),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                         onClick = {
                             showDialog = false
                             viewModel.onEvent(DiaryEvent.ReadDBImport)
                         }) {
-                        Text(text = stringResource(R.string.btn_ok), color = MaterialTheme.colors.onError)
+                        Text(text = stringResource(R.string.btn_ok), color = MaterialTheme.colorScheme.onError)
                     }
                 },
                 dismissButton = {
                     Button(
-                        colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.background),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background),
                         onClick = {
                             showDialog = false
                         }) {
-                        Text(text = stringResource(R.string.btn_abort), color = MaterialTheme.colors.onBackground)
+                        Text(text = stringResource(R.string.btn_abort), color = MaterialTheme.colorScheme.onBackground)
                     }
                 }
             )
