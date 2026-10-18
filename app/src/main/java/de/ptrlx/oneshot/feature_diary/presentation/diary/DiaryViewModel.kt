@@ -39,7 +39,15 @@ class DiaryViewModel @Inject constructor(
     private val LOG_TAG = "DiaryViewModel"
     private val modeRW =
         Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-    private val now = ZonedDateTime.now()
+    /**
+     * The current date.
+     *
+     * The roll, the flashbacks and the day that can still be captured all hang off this. It used
+     * to be read once when the view model was built, so an app left open past midnight kept
+     * offering yesterday as today. [refreshDate] re-reads it and restarts what depends on it.
+     */
+    var today: LocalDate by mutableStateOf(LocalDate.now())
+        private set
 
     var isSnackbarShowing: Boolean by mutableStateOf(false)
 
@@ -67,10 +75,10 @@ class DiaryViewModel @Inject constructor(
         private set
     var flashbacks: List<DiaryEntry?> by mutableStateOf(emptyList())
         private set
-    var last28Days: Array<Pair<String, DiaryEntry?>> by mutableStateOf(generateLast28Days(now.toLocalDate()))
+    var last28Days: Array<Pair<String, DiaryEntry?>> by mutableStateOf(generateLast28Days(LocalDate.now()))
         private set
 
-    var stats: StatsType = diaryUseCases.getStats(now)
+    var stats: StatsType by mutableStateOf(diaryUseCases.getStats(ZonedDateTime.now()))
         private set
 
     private var recentlyDeleteDiaryEntry: DiaryEntry? = null
@@ -302,31 +310,55 @@ class DiaryViewModel @Inject constructor(
                     }
                     .launchIn(viewModelScope)
 
-        if (getFlashbacksJob == null) {
-            getFlashbacksJob = diaryUseCases.getFlashbacks(now.toLocalDate())
-                .onEach { entries ->
-                    Log.d(LOG_TAG, "New element received in GetFlashbacksJob")
-                    flashbacks = entries
-                }.launchIn(viewModelScope)
-        }
+        if (getFlashbacksJob == null) startFlashbacksJob()
 
-        if (getLast28DaysJob == null) {
-            getLast28DaysJob = stats.lastDays28.onEach { entries ->
-                Log.d(LOG_TAG, "New element received in GetLast28DaysJob")
-                val current = now.toLocalDate()
-                val last28DaysTemp = generateLast28Days(current)
-                entries.forEach { entry ->
-                    val index = Period.between(entry.date, current).days
-                    last28DaysTemp[index] = Pair(
-                        last28DaysTemp[index].first,
-                        entry
-                    )
-                }
-                last28Days = last28DaysTemp
-            }.launchIn(viewModelScope)
-        }
+        if (getLast28DaysJob == null) startLast28DaysJob()
     }
 
+
+    private fun startFlashbacksJob() {
+        getFlashbacksJob?.cancel()
+        getFlashbacksJob = diaryUseCases.getFlashbacks(today)
+            .onEach { entries ->
+                Log.d(LOG_TAG, "New element received in GetFlashbacksJob")
+                // "Last very happy day" resolves to today whenever today is the happiest day so
+                // far, and today is not something to look back on.
+                flashbacks = entries.filter { entry -> entry == null || entry.date != today }
+            }.launchIn(viewModelScope)
+    }
+
+    private fun startLast28DaysJob() {
+        getLast28DaysJob?.cancel()
+        getLast28DaysJob = stats.lastDays28.onEach { entries ->
+            Log.d(LOG_TAG, "New element received in GetLast28DaysJob")
+            val current = today
+            val last28DaysTemp = generateLast28Days(current)
+            entries.forEach { entry ->
+                val index = Period.between(entry.date, current).days
+                if (index in last28DaysTemp.indices) {
+                    last28DaysTemp[index] = Pair(last28DaysTemp[index].first, entry)
+                }
+            }
+            last28Days = last28DaysTemp
+        }.launchIn(viewModelScope)
+    }
+
+    /**
+     * Re-read the current date and restart everything derived from it.
+     *
+     * Called when the app returns to the foreground, so a day that passed while it sat in the
+     * background is picked up instead of the view model keeping the date it was created with.
+     */
+    fun refreshDate() {
+        val current = LocalDate.now()
+        if (current == today) return
+
+        Log.d(LOG_TAG, "Date rolled over from $today to $current")
+        today = current
+        stats = diaryUseCases.getStats(ZonedDateTime.now())
+        startFlashbacksJob()
+        startLast28DaysJob()
+    }
 
     /**
      * Create a dummy file which can be used from camara app to store image.
