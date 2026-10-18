@@ -15,6 +15,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -25,9 +26,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import de.ptrlx.oneshot.R
+import de.ptrlx.oneshot.feature_diary.presentation.diary.components.AppTopBar
 import de.ptrlx.oneshot.feature_diary.presentation.diary.components.BottomNavigationBar
 import de.ptrlx.oneshot.feature_diary.presentation.diary.components.Navigation
 import de.ptrlx.oneshot.feature_diary.presentation.diary.components.common.AddEditEntryModalBottomSheetContent
@@ -46,13 +49,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
+            val viewModel: DiaryViewModel = hiltViewModel()
+            viewModel.startGetEntriesJobs(LocalContext.current)
             OneShotTheme {
-                val viewModel: DiaryViewModel = hiltViewModel()
-                viewModel.startGetEntriesJobs(LocalContext.current)
                 val navController = rememberNavController()
 
-                // A day can pass while the app sits in the background, so the date is re-read
-                // every time it comes back to the foreground.
+                // A day can pass while the app sits in the background; re-read it on resume so
+                // "today" never goes stale.
                 val lifecycleOwner = LocalLifecycleOwner.current
                 DisposableEffect(lifecycleOwner) {
                     val observer = LifecycleEventObserver { _, event ->
@@ -67,6 +70,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     snackbarHost = { SnackbarHost(snackbarHostState) },
+                    topBar = { AppTopBar(navController) },
                     bottomBar = {
                         BottomNavigationBar(
                             items = listOf(
@@ -90,7 +94,11 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 ) { innerPadding ->
-                    Navigation(viewModel, navController, Modifier.padding(innerPadding))
+                    Navigation(
+                        viewModel = viewModel,
+                        controller = navController,
+                        modifier = Modifier.padding(innerPadding)
+                    )
                 }
 
                 if (viewModel.isSnackbarShowing) {
@@ -110,9 +118,15 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                // Composing the sheet is what shows it in Material 3, which is why the former
-                // show and hide events collapse into this one condition.
-                if (viewModel.isEntrySheetVisible) {
+                // Material 3 shows a modal sheet by composing it, so the former show/hide event
+                // pair collapses into this one condition.
+                // Home already carries a sheet, and stacking a modal one on top of it looked like
+                // two sheets fighting over the same corner. There it hosts the editor itself; the
+                // modal is for the screens that have no sheet of their own.
+                val currentRoute by navController.currentBackStackEntryAsState()
+                val homeOwnsTheSheet = currentRoute?.destination?.route == "home"
+
+                if (viewModel.isEntrySheetVisible && !homeOwnsTheSheet) {
                     ModalBottomSheet(
                         onDismissRequest = { viewModel.onEntrySheetDismissed() },
                         sheetState = sheetState

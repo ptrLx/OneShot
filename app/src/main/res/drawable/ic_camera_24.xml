@@ -1,0 +1,20 @@
+<!--
+    A camera outline, drawn here rather than taken from material-icons-extended: that artifact
+    carries the whole extended icon set and would grow the APK for a single glyph.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="#FFFFFF">
+    <path
+        android:pathData="M4,7.6 H7.6 L9.2,5.2 H14.8 L16.4,7.6 H20 A2,2 0 0 1 22,9.6 V18 A2,2 0 0 1 20,20 H4 A2,2 0 0 1 2,18 V9.6 A2,2 0 0 1 4,7.6 Z"
+        android:strokeWidth="1.8"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M12,10.4 A3.4,3.4 0 0 1 12,17.2 A3.4,3.4 0 0 1 12,10.4 Z"
+        android:strokeWidth="1.8"
+        android:strokeColor="#FFFFFF" />
+</vector>

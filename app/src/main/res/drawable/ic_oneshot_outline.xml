@@ -1,0 +1,41 @@
+<!--
+    The app mark in outline weight, built from the same paths as logo/v2/foreground.svg.
+
+    Unfilled on purpose: it marks a frame that is still empty, so it is only ever shown in the
+    capture slot before today's photo exists. Drawn with a tint, so it follows its surface.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108"
+    android:tint="#FFFFFF">
+    <path
+        android:pathData="M38.8,26.4 H48.2 A1.8,1.8 0 0 1 50,28.2 V28.2 A1.8,1.8 0 0 1 48.2,30 H38.8 A1.8,1.8 0 0 1 37,28.2 V28.2 A1.8,1.8 0 0 1 38.8,26.4 Z"
+        android:strokeWidth="3"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M38,32 H70 A9,9 0 0 1 79,41 V67 A9,9 0 0 1 70,76 H38 A9,9 0 0 1 29,67 V41 A9,9 0 0 1 38,32 Z"
+        android:strokeWidth="3.6"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M67.53,55.42 A13.6,13.6 0 1 1 54,40.4"
+        android:strokeWidth="4.08"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M49.92,50.33 L54.95,46.66 V60.39"
+        android:strokeWidth="4.08"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M50.46,60.39 H59.44"
+        android:strokeWidth="4.08"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

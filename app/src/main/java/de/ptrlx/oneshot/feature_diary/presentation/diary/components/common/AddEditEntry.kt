@@ -28,7 +28,6 @@ import de.ptrlx.oneshot.feature_diary.domain.util.HappinessType
 import de.ptrlx.oneshot.feature_diary.presentation.diary.DiaryEvent
 import de.ptrlx.oneshot.feature_diary.presentation.diary.DiaryViewModel
 import java.time.Instant
-import java.time.LocalDate
 import java.time.ZoneId
 
 @Composable
@@ -173,22 +172,3 @@ fun AddEditEntryModalBottomSheetContent(
         }
     }
 }
-
-@Composable
-fun AddEditOrSetLocationButton(
-    modifier: Modifier = Modifier,
-    viewModel: DiaryViewModel,
-    hideWhenCaptured: Boolean = false
-) {
-    var lastEntry: DiaryEntry? = null
-    try {
-      lastEntry = viewModel.entries.last()
-    } catch (e: NoSuchElementException) {}
-
-    if (viewModel.fileManager == null)
-        SetLocation(modifier.padding(top = 4.dp), viewModel = viewModel)
-    else if ((!hideWhenCaptured) || (lastEntry?.date != LocalDate.now()))
-        AddEntryButton(modifier.padding(top = 4.dp), viewModel = viewModel)
-
-}
-
