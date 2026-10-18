@@ -7,7 +7,9 @@ enum class SnackbarCause {
     DELETE_ENTRY,
     SUCCESS,
     ERROR,
-    IMPORT_SKIPPED_ENTRIES;
+    IMPORT_SKIPPED_ENTRIES,
+    NOTHING_TO_EXPORT,
+    NO_FOLDER;
 
     fun msg(): Int {
         return when (this) {
@@ -15,6 +17,8 @@ enum class SnackbarCause {
             SUCCESS -> R.string.snackbar_msg_success
             ERROR -> R.string.snackbar_msg_error
             IMPORT_SKIPPED_ENTRIES -> R.string.snackbar_msg_error
+            NOTHING_TO_EXPORT -> R.string.snackbar_msg_nothing_to_export
+            NO_FOLDER -> R.string.msg_set_base_location
         }
     }
 
@@ -24,6 +28,8 @@ enum class SnackbarCause {
             SUCCESS -> R.string.snackbar_action_dismiss
             ERROR -> R.string.snackbar_action_dismiss
             IMPORT_SKIPPED_ENTRIES -> R.string.snackbar_action_dismiss
+            NOTHING_TO_EXPORT -> R.string.snackbar_action_dismiss
+            NO_FOLDER -> R.string.snackbar_action_dismiss
         }
     }
 

@@ -11,6 +11,15 @@ interface DiaryEntryDao {
     @Query("SELECT * FROM DiaryEntry")
     fun getDiaryEntries(): Flow<List<DiaryEntry>>
 
+    /**
+     * Every entry, once.
+     *
+     * The JSON export reads this deliberately rather than whatever list the UI happens to be
+     * holding, so the file always contains the whole diary.
+     */
+    @Query("SELECT * FROM DiaryEntry ORDER BY date ASC")
+    suspend fun getAllEntriesOnce(): List<DiaryEntry>
+
     @Query("SELECT * FROM DiaryEntry WHERE textContent LIKE '%' || :keyword || '%'") //todo search for multiple keywords instead; add case sensitivity
     fun getDiaryEntries(keyword: String): Flow<List<DiaryEntry>>
 

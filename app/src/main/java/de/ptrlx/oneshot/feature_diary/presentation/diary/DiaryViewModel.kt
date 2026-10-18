@@ -13,6 +13,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -212,14 +214,27 @@ class DiaryViewModel @Inject constructor(
 //              }
             }
             is DiaryEvent.WriteDBExport -> {
-                if (entries.isNotEmpty()) {
-                    val timestamp = System.currentTimeMillis()
-                    val currentDate =
-                        SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault()).format(timestamp)
-                    val filename = "OneShot_DB_$currentDate.json"
-                    val success = fileManager?.writeJSONExport(filename, entries)
-                    snackbarCause =
-                        (if (success == true) SnackbarCause.SUCCESS else SnackbarCause.ERROR)
+                // Serialising the diary and writing the file is disk work, and it used to run
+                // inline on the main thread. Reading the entries from their own query also means
+                // the export no longer depends on what the UI happens to have loaded.
+                // Every outcome reports something. An empty diary or a missing folder used to
+                // produce no feedback at all, which looks like a dead button.
+                viewModelScope.launch {
+                    val manager = fileManager
+                    if (manager == null) {
+                        snackbarCause = SnackbarCause.NO_FOLDER
+                        isSnackbarShowing = true
+                        return@launch
+                    }
+                    val result = withContext(Dispatchers.IO) {
+                        val all = diaryUseCases.getDiarySummary.allEntriesOnce()
+                        if (all.isEmpty()) return@withContext SnackbarCause.NOTHING_TO_EXPORT
+                        val currentDate = SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault())
+                            .format(System.currentTimeMillis())
+                        val ok = manager.writeJSONExport("OneShot_DB_$currentDate.json", all)
+                        if (ok) SnackbarCause.SUCCESS else SnackbarCause.ERROR
+                    }
+                    snackbarCause = result
                     isSnackbarShowing = true
                 }
             }
