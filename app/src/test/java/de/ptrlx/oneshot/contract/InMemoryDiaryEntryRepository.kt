@@ -3,6 +3,7 @@ package de.ptrlx.oneshot.contract
 import de.ptrlx.oneshot.feature_diary.domain.model.DiaryEntry
 import de.ptrlx.oneshot.feature_diary.domain.repository.DiaryEntryRepository
 import de.ptrlx.oneshot.feature_diary.domain.util.HappinessType
+import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.util.TreeMap
@@ -23,7 +24,11 @@ class InMemoryDiaryEntryRepository : DiaryEntryRepository {
     }
 
     override fun getDiaryEntries(): Flow<List<DiaryEntry>> = unsupported()
+    override fun pagedDiaryEntries(pageSize: Int): Flow<PagingData<DiaryEntry>> = unsupported()
+    override fun getAllDates(): Flow<List<LocalDate>> = unsupported()
     override suspend fun getAllEntriesOnce(): List<DiaryEntry> = entries.values.toList()
+    override fun countByHappiness(): Flow<Map<HappinessType, Int>> = unsupported()
+    override fun getHappiestEntries(limit: Int): Flow<List<DiaryEntry>> = unsupported()
     override fun getDiaryEntries(keyword: String): Flow<List<DiaryEntry>> = unsupported()
     override fun getDiaryEntries(happiness: HappinessType): Flow<List<DiaryEntry>> = unsupported()
     override fun getDiaryEntries(keyword: String, happiness: HappinessType): Flow<List<DiaryEntry>> = unsupported()

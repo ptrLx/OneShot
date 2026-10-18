@@ -16,6 +16,10 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Job
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import de.ptrlx.oneshot.feature_diary.domain.model.DiaryListItem
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -73,6 +77,20 @@ class DiaryViewModel @Inject constructor(
         private set
     var currentImportDatabaseUri: Uri? by mutableStateOf(null)
 
+    /**
+     * The gallery, paged.
+     *
+     * cachedIn keeps the loaded pages across configuration changes and across navigating away
+     * and back, so returning to the diary does not re-read from the top.
+     */
+    val diaryPages: Flow<PagingData<DiaryListItem>> =
+        diaryUseCases.getDiaryPage().cachedIn(viewModelScope)
+
+    /**
+     * Every entry, still read in full for the screens that have not been rewritten yet.
+     *
+     * The gallery no longer uses this. It goes away with the screens that do.
+     */
     var entries: List<DiaryEntry> by mutableStateOf(emptyList())
         private set
     var flashbacks: List<DiaryEntry?> by mutableStateOf(emptyList())
