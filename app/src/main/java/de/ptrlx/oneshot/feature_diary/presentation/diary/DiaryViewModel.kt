@@ -20,6 +20,7 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import de.ptrlx.oneshot.feature_diary.domain.model.DiaryListItem
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -29,14 +30,23 @@ import de.ptrlx.oneshot.feature_diary.domain.model.DiaryEntry
 import de.ptrlx.oneshot.feature_diary.domain.use_case.DiaryUseCases
 import de.ptrlx.oneshot.feature_diary.domain.use_case.diary_entry.ImportResult
 import de.ptrlx.oneshot.feature_diary.domain.util.DiaryFileManager
+import de.ptrlx.oneshot.feature_diary.domain.util.HappinessType
 import de.ptrlx.oneshot.feature_diary.domain.util.StatsType
 import de.ptrlx.oneshot.feature_diary.domain.util.imageBaseLocationKey
 import de.ptrlx.oneshot.feature_diary.presentation.diary.util.SnackbarCause
 import java.text.SimpleDateFormat
 import java.time.LocalDate
-import java.time.Period
+import java.time.YearMonth
 import java.time.ZonedDateTime
 import java.util.*
+
+/**
+ * How many happy days to fetch for the memories row.
+ *
+ * Over-fetched because today and anything already in the flashback row is filtered out, and three
+ * survivors are needed.
+ */
+private const val HAPPIEST_CANDIDATES = 12
 
 @HiltViewModel
 class DiaryViewModel @Inject constructor(
@@ -45,23 +55,24 @@ class DiaryViewModel @Inject constructor(
     private val LOG_TAG = "DiaryViewModel"
     private val modeRW =
         Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+    var isSnackbarShowing: Boolean by mutableStateOf(false)
+
     /**
      * The current date.
      *
-     * The roll, the flashbacks and the day that can still be captured all hang off this. It used
-     * to be read once when the view model was built, so an app left open past midnight kept
-     * offering yesterday as today. [refreshDate] re-reads it and restarts what depends on it.
+     * Everything on screen is derived from this: the roll, the flashbacks, which frame is "today"
+     * and which day can still be captured. It used to be read once when the view model was built,
+     * so an app left open past midnight kept showing yesterday as today. [refreshDate] re-reads it
+     * and restarts everything that depends on it.
      */
     var today: LocalDate by mutableStateOf(LocalDate.now())
         private set
 
-    var isSnackbarShowing: Boolean by mutableStateOf(false)
-
     /**
      * Whether the add/edit sheet is open.
      *
-     * Material 3 shows a modal sheet by composing it, so one flag replaces the former pair of
-     * show and hide events plus the separate "new dialog" marker.
+     * Material 3 shows a modal sheet by composing it, so a single flag replaces the former pair of
+     * show/hide events plus the separate "new dialog" marker.
      */
     var isEntrySheetVisible: Boolean by mutableStateOf(false)
         private set
@@ -80,23 +91,87 @@ class DiaryViewModel @Inject constructor(
     /**
      * The gallery, paged.
      *
-     * cachedIn keeps the loaded pages across configuration changes and across navigating away
+     * `cachedIn` keeps the loaded pages across configuration changes and across navigating away
      * and back, so returning to the diary does not re-read from the top.
      */
     val diaryPages: Flow<PagingData<DiaryListItem>> =
         diaryUseCases.getDiaryPage().cachedIn(viewModelScope)
 
-    /**
-     * Every entry, still read in full for the screens that have not been rewritten yet.
-     *
-     * The gallery no longer uses this. It goes away with the screens that do.
-     */
-    var entries: List<DiaryEntry> by mutableStateOf(emptyList())
+    /** Every entry date, newest first: enough for the dividers, strips and the rolls overview. */
+    var entryDates: List<LocalDate> by mutableStateOf(emptyList())
         private set
+
+    /** How many entries carry each happiness, counted in SQL. */
+    var happinessCounts: Map<HappinessType, Int> by mutableStateOf(emptyMap())
+        private set
+
+
     var flashbacks: List<DiaryEntry?> by mutableStateOf(emptyList())
         private set
-    var last28Days: Array<Pair<String, DiaryEntry?>> by mutableStateOf(generateLast28Days(LocalDate.now()))
+
+    /** Candidates for the happy memories row, fetched happiest first and filtered below. */
+    private var happiestEntries: List<DiaryEntry> by mutableStateOf(emptyList())
+
+    /** The month the roll calendar is showing. A new month opens on the new roll. */
+    var visibleMonth: YearMonth by mutableStateOf(YearMonth.now())
         private set
+    var visibleMonthEntries: List<DiaryEntry> by mutableStateOf(emptyList())
+        private set
+
+    /**
+     * The day the Home sheet is showing. Today unless another one-shot was tapped.
+     */
+    var selectedHomeDate: LocalDate by mutableStateOf(LocalDate.now())
+        private set
+
+    /**
+     * The entry the Home sheet is showing, when it was opened from a specific one-shot.
+     *
+     * Carried rather than looked up, because a happy memory or a flashback can be older than the
+     * loaded gallery window and would not be found in [entries].
+     */
+    var selectedHomeEntry: DiaryEntry? by mutableStateOf(null)
+        private set
+
+    /** Show a specific one-shot, whatever its age. */
+    fun selectHomeEntry(entry: DiaryEntry) {
+        selectedHomeDate = entry.date
+        selectedHomeEntry = entry
+    }
+
+    /** Show a day by date; its entry, if any, is resolved from the loaded window. */
+    fun selectHomeDate(date: LocalDate) {
+        selectedHomeDate = date
+        selectedHomeEntry = null
+    }
+
+    /**
+     * Today's entry, or null while today's frame is still unexposed.
+     *
+     * Its own small query, because with a paged gallery there is no longer a loaded list to
+     * search, and today has to be correct whether or not the diary has been scrolled.
+     */
+    var todayEntry: DiaryEntry? by mutableStateOf(null)
+        private set
+
+    /** The entries of [visibleMonth], keyed by day of month, for the roll calendar. */
+    val visibleMonthByDay: Map<Int, DiaryEntry>
+        get() = visibleMonthEntries.associateBy { it.date.dayOfMonth }
+
+    /**
+     * Up to three happy memories for Home.
+     *
+     * The happiest days that are not today and are not already in the flashback row below, so the
+     * same photo never appears twice on one screen. Ordered by happiness and then by date, so the
+     * selection is stable instead of reshuffling on every recomposition.
+     */
+    val happyMemories: List<DiaryEntry>
+        get() {
+            val alreadyShown = flashbacks.filterNotNull().map { it.date }.toSet()
+            return happiestEntries
+                .filter { it.date != today && it.date !in alreadyShown }
+                .take(3)
+        }
 
     var stats: StatsType by mutableStateOf(diaryUseCases.getStats(ZonedDateTime.now()))
         private set
@@ -107,7 +182,11 @@ class DiaryViewModel @Inject constructor(
     private var getImageBaseLocationJob: Job? = null
     private var getDiaryEntriesJob: Job? = null
     private var getFlashbacksJob: Job? = null
-    private var getLast28DaysJob: Job? = null
+    private var getVisibleMonthJob: Job? = null
+    private var getDatesJob: Job? = null
+    private var getHappinessCountsJob: Job? = null
+    private var getHappiestJob: Job? = null
+    private var getTodayJob: Job? = null
 
     var snackbarCause: SnackbarCause = SnackbarCause.DELETE_ENTRY
         private set
@@ -157,7 +236,10 @@ class DiaryViewModel @Inject constructor(
                 Log.d(LOG_TAG, "Image saved")
             }
             is DiaryEvent.ImageImport -> {
-                createNewImageDummyOrImport(copyImageUri = event.uri)
+                createNewImageDummyOrImport(
+                    copyImageUri = event.uri,
+                    targetDate = event.date ?: today
+                )
                 showModalBottomSheet()
             }
             is DiaryEvent.CaptureImageAborted -> {
@@ -232,16 +314,16 @@ class DiaryViewModel @Inject constructor(
 //              }
             }
             is DiaryEvent.WriteDBExport -> {
-                // Serialising the diary and writing the file is disk work, and it used to run
-                // inline on the main thread. Reading the entries from their own query also means
-                // the export no longer depends on what the UI happens to have loaded.
-                // Every outcome reports something. An empty diary or a missing folder used to
-                // produce no feedback at all, which looks like a dead button.
+                // The export has to hold the whole diary, not the pages the gallery happens to
+                // have loaded, and writing a file is disk work that used to run inline on the
+                // main thread.
+                // Every outcome reports something. An export that silently did nothing, which is
+                // what an empty diary or a missing folder used to produce, looks like a dead
+                // button.
                 viewModelScope.launch {
                     val manager = fileManager
                     if (manager == null) {
-                        snackbarCause = SnackbarCause.NO_FOLDER
-                        isSnackbarShowing = true
+                        showSnackbar(SnackbarCause.NO_FOLDER)
                         return@launch
                     }
                     val result = withContext(Dispatchers.IO) {
@@ -252,8 +334,7 @@ class DiaryViewModel @Inject constructor(
                         val ok = manager.writeJSONExport("OneShot_DB_$currentDate.json", all)
                         if (ok) SnackbarCause.SUCCESS else SnackbarCause.ERROR
                     }
-                    snackbarCause = result
-                    isSnackbarShowing = true
+                    showSnackbar(result)
                 }
             }
             is DiaryEvent.ReadDBImport -> {
@@ -334,52 +415,49 @@ class DiaryViewModel @Inject constructor(
                 }.launchIn(viewModelScope)
 
 
-        if (getDiaryEntriesJob == null)
-            getDiaryEntriesJob =
-                diaryUseCases.getDiaryEntries()
-                    .onEach { entries ->
-                        Log.d(LOG_TAG, "New element received in GetDiaryEntriesJob")
-                        this.entries = entries
-                    }
-                    .launchIn(viewModelScope)
+        if (getTodayJob == null) startTodayJob()
+
+        if (getDatesJob == null)
+            getDatesJob = diaryUseCases.getDiarySummary.dates()
+                .onEach { dates -> entryDates = dates }
+                .launchIn(viewModelScope)
+
+        if (getHappinessCountsJob == null)
+            getHappinessCountsJob = diaryUseCases.getDiarySummary.happinessCounts()
+                .onEach { counts -> happinessCounts = counts }
+                .launchIn(viewModelScope)
+
+        if (getHappiestJob == null)
+            getHappiestJob = diaryUseCases.getDiarySummary.happiest(HAPPIEST_CANDIDATES)
+                .onEach { happiest -> happiestEntries = happiest }
+                .launchIn(viewModelScope)
 
         if (getFlashbacksJob == null) startFlashbacksJob()
 
-        if (getLast28DaysJob == null) startLast28DaysJob()
+        if (getVisibleMonthJob == null) showMonth(visibleMonth)
     }
 
+    private fun startTodayJob() {
+        getTodayJob?.cancel()
+        getTodayJob = diaryUseCases.getDiarySummary.entryOn(today)
+            .onEach { entry -> todayEntry = entry }
+            .launchIn(viewModelScope)
+    }
 
     private fun startFlashbacksJob() {
         getFlashbacksJob?.cancel()
         getFlashbacksJob = diaryUseCases.getFlashbacks(today)
             .onEach { entries ->
                 Log.d(LOG_TAG, "New element received in GetFlashbacksJob")
-                // "Last very happy day" resolves to today whenever today is the happiest day so
-                // far, and today is not something to look back on.
+                // "Last very happy day" can resolve to today, and today is not a flashback.
                 flashbacks = entries.filter { entry -> entry == null || entry.date != today }
             }.launchIn(viewModelScope)
-    }
-
-    private fun startLast28DaysJob() {
-        getLast28DaysJob?.cancel()
-        getLast28DaysJob = stats.lastDays28.onEach { entries ->
-            Log.d(LOG_TAG, "New element received in GetLast28DaysJob")
-            val current = today
-            val last28DaysTemp = generateLast28Days(current)
-            entries.forEach { entry ->
-                val index = Period.between(entry.date, current).days
-                if (index in last28DaysTemp.indices) {
-                    last28DaysTemp[index] = Pair(last28DaysTemp[index].first, entry)
-                }
-            }
-            last28Days = last28DaysTemp
-        }.launchIn(viewModelScope)
     }
 
     /**
      * Re-read the current date and restart everything derived from it.
      *
-     * Called when the app returns to the foreground, so a day that passed while it sat in the
+     * Called when the app comes back to the foreground, so a day that passed while it sat in the
      * background is picked up instead of the view model keeping the date it was created with.
      */
     fun refreshDate() {
@@ -387,23 +465,54 @@ class DiaryViewModel @Inject constructor(
         if (current == today) return
 
         Log.d(LOG_TAG, "Date rolled over from $today to $current")
+        val wasOnCurrentMonth = visibleMonth == YearMonth.from(today)
+        if (selectedHomeDate == today) selectedHomeDate = current
         today = current
         stats = diaryUseCases.getStats(ZonedDateTime.now())
         startFlashbacksJob()
-        startLast28DaysJob()
+        startTodayJob()
+        if (wasOnCurrentMonth) showMonth(YearMonth.from(current))
     }
+
+    /** Jump the roll calendar back to the month that contains today. */
+    fun showCurrentMonth() = showMonth(YearMonth.from(today))
+
+    /**
+     * Load the roll of [month] into [visibleMonthEntries].
+     *
+     * One roll is one calendar month and a frame's index is its day of month, so nothing has to be
+     * stored for this: the roll is derived from the entry date alone.
+     */
+    fun showMonth(month: YearMonth) {
+        visibleMonth = month
+        getVisibleMonthJob?.cancel()
+        getVisibleMonthJob = diaryUseCases.getCalenderMonth(month)
+            .onEach { entries ->
+                Log.d(LOG_TAG, "New element received in GetVisibleMonthJob for $month")
+                visibleMonthEntries = entries
+            }
+            .launchIn(viewModelScope)
+    }
+
 
     /**
      * Create a dummy file which can be used from camara app to store image.
      *
      * @return Uri that can be used to store an image
      */
-    fun createNewImageDummy(): Uri? {
-        return createNewImageDummyOrImport(copyImageUri = null)
+    fun createNewImageDummy(date: LocalDate = today): Uri? {
+        return createNewImageDummyOrImport(copyImageUri = null, targetDate = date)
     }
 
-    private fun createNewImageDummyOrImport(copyImageUri: Uri? = null): Uri? {
-        val localDate = LocalDate.now()
+    /** A day can be filled while it is today or already past, but never before it happens. */
+    fun canCaptureFor(date: LocalDate): Boolean = !date.isAfter(today)
+
+    private fun createNewImageDummyOrImport(
+        copyImageUri: Uri? = null,
+        targetDate: LocalDate = today
+    ): Uri? {
+        if (!canCaptureFor(targetDate)) return null
+
         val timestamp = System.currentTimeMillis()
         val currentDate =
             SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault()).format(timestamp)
@@ -416,43 +525,44 @@ class DiaryViewModel @Inject constructor(
         }
 
         uri?.let {
+            // Replacing the photo of a day keeps everything that was written about it: only the
+            // image and its timestamp change, so happiness, motivation and text survive a
+            // re-shoot. The previous file stays on disk, because photos are never deleted
+            // automatically (#11).
             currentIsNewEntry = true
             currentImageAddEditEntry = DiaryEntry(
-                localDate,
+                targetDate,
                 timestamp / 1000L,
-                localDate.dayOfYear,
+                targetDate.dayOfYear,
                 filename
             )
+            // The caller needs the file Uri synchronously to hand to the camera, so the day's
+            // existing entry is merged in just afterwards: the sheet that reads it opens later.
+            viewModelScope.launch {
+                val existing = diaryUseCases.getDiarySummary.entryOn(targetDate).first()
+                if (existing != null && currentImageAddEditEntry?.date == targetDate) {
+                    currentIsNewEntry = false
+                    currentImageAddEditEntry = existing.copy(
+                        created = timestamp / 1000L,
+                        relativePath = filename
+                    )
+                }
+            }
         }
 
         return uri
-    }
-
-    private fun generateLast28Days(current: LocalDate): Array<Pair<String, DiaryEntry?>> {
-        return Array(28) { i ->
-            current.minusDays(i.toLong()).let {
-                Pair(
-                    "${
-                        String.format("%02d", it.monthValue)
-                    }-${
-                        String.format("%02d", it.dayOfMonth)
-                    }",
-                    null
-                )
-            }
-        }
     }
 
     private fun hideModalBottomSheet() {
         isEntrySheetVisible = false
     }
 
+    private fun showModalBottomSheet() {
+        isEntrySheetVisible = true
+    }
+
     /** Called when the sheet is dismissed by swiping it away or tapping outside it. */
     fun onEntrySheetDismissed() {
         isEntrySheetVisible = false
-    }
-
-    private fun showModalBottomSheet() {
-        isEntrySheetVisible = true
     }
 }

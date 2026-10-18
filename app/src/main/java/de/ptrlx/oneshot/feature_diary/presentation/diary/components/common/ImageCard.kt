@@ -132,7 +132,7 @@ internal fun ImageCard(
                         .padding(12.dp),
                     contentAlignment = Alignment.BottomEnd
                 ) {
-                    Text(happiness.emoticon(), style = TextStyle(fontSize = 16.sp))
+                    HappinessFace(happiness = happiness, size = 22.dp)
                 }
             }
 

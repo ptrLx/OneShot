@@ -17,9 +17,11 @@ class GetCalenderMonthUseCase(
      * @return Flow of List of all diary entries created in this month.
      */
     operator fun invoke(yearMonth: YearMonth): Flow<List<DiaryEntry>> {
+        // getDiaryEntriesBetween treats the end as exclusive (`date < :end`), so the first day of
+        // the next month is passed: atEndOfMonth() dropped the last day of every month.
         return repository.getDiaryEntriesBetween(
             yearMonth.atDay(1),
-            yearMonth.atEndOfMonth()
+            yearMonth.plusMonths(1).atDay(1)
         )
     }
 }

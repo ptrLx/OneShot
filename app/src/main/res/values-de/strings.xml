@@ -11,9 +11,9 @@
     <string name="btn_import_img">Bild importieren</string>
     <string name="msg_move_old_imgs">Alte Bilder müssen manuell in den neuen Ordner kopiert werden</string>
     <string name="btn_set_base_location">Basisordner festlegen</string>
-    <string name="route_home">Start</string>
+    <string name="route_home">Mein OneShot</string>
     <string name="route_diary">Tagebuch</string>
-    <string name="route_statistics">Statistiken</string>
+    <string name="route_statistics">Stimmung</string>
     <string name="flashbacks">Flashbacks</string>
     <string name="days_ago_14">Vor 14 Tagen</string>
     <string name="days_ago_7">Vor 7 Tagen</string>
@@ -33,6 +33,13 @@
     <string name="snackbar_action_dismiss">VERSTANDEN</string>
     <string name="last_28_days">Letzten 28 Tage</string>
     <string name="back">zurück</string>
+    <string name="settings_appearance">Darstellung</string>
+    <string name="settings_photos">Fotos</string>
+    <string name="settings_photos_body">Deine Fotos werden in diesem Ordner gespeichert und bleiben deine.</string>
+    <string name="settings_data">Daten</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Hell</string>
+    <string name="theme_dark">Dunkel</string>
     <string name="settings">Einstellungen</string>
     <string name="export_db">Datenbank exportieren</string>
     <string name="thank_you_text">Danke, dass du OneShot benutzt!</string>
@@ -46,4 +53,67 @@
         <item quantity="one">Import abgeschlossen: %1$d importiert, %2$d ungültiger Eintrag übersprungen</item>
         <item quantity="other">Import abgeschlossen: %1$d importiert, %2$d ungültige Einträge übersprungen</item>
     </plurals>
+    <string name="diary_text">Tagebuch</string>
+    <string name="diary_text_placeholder">Was war heute schön? Markdown wird unterstützt.</string>
+    <string name="btn_edit">Bearbeiten</string>
+    <string name="btn_preview">Vorschau</string>
+    <string name="today">Heute</string>
+    <string name="sheet_captured">Aufgenommen</string>
+    <string name="sheet_not_captured">Noch nicht aufgenommen</string>
+    <string name="sheet_empty_day">Kein Foto für diesen Tag</string>
+    <string name="sheet_back_to_today">Zurück zu heute</string>
+    <string name="btn_capture_that_day">Diesen Tag ergänzen</string>
+    <string name="btn_retake">Neu aufnehmen</string>
+    <string name="btn_replace_from_gallery">Ersetzen</string>
+    <string name="setup_title">Ein Foto pro Tag</string>
+    <string name="setup_body">OneShot speichert deine Fotos in einem Ordner, den du auswählst. Wähle einen aus, um zu beginnen.</string>
+    <string name="setup_step_folder_title">Ordner auswählen</string>
+    <string name="setup_step_folder_body">Deine Fotos werden dort gespeichert und bleiben deine. Nimm einen leeren Ordner, wenn du neu anfängst.</string>
+    <string name="setup_step_import_title">Schon ein OneShot-Tagebuch?</string>
+    <string name="setup_step_import_body">Wähle den Ordner mit deinen Fotos und importiere dann deinen JSON-Export in den Einstellungen.</string>
+    <string name="setup_step_privacy_title">Deine Daten gehören dir</string>
+    <string name="add_photo_for_day">Foto für %1$s hinzufügen</string>
+    <string name="roll_photos">Fotos</string>
+    <string name="btn_import_from_gallery">Aus Galerie importieren</string>
+    <string name="desc_today_photo">Das Foto von heute</string>
+    <string name="greeting_morning">Guten Morgen</string>
+    <string name="greeting_afternoon">Guten Tag</string>
+    <string name="greeting_evening">Guten Abend</string>
+    <string name="empty_diary_title">Dein Tagebuch beginnt heute</string>
+    <string name="empty_diary_body">Jeder Tag hat mindestens einen guten Moment. Halte den ersten fest.</string>
+    <string name="happy_memories">Schöne Erinnerungen</string>
+    <string name="roll_empty_hint">Ein leerer Film. Heute ist das erste Bild.</string>
+    <string name="roll_frames_of">%1$d von %2$d</string>
+    <string name="roll_frames_exposed">%1$d von %2$d Bildern belichtet</string>
+    <string name="all_time">Insgesamt</string>
+    <string name="all_rolls">Alle Filme</string>
+    <string name="rolls_gap">%1$s bis %2$s · %3$d Monate ohne Bild</string>
+    <string name="month_shape">Wie dieser Monat läuft</string>
+    <string name="month_today">Zurück zu diesem Monat</string>
+    <string name="rolls">Filme</string>
+    <string name="rolls_summary">%1$d Monate, %2$d Bilder</string>
+    <string name="roll_month_empty">Keine Bilder</string>
+    <string name="streak_days">%1$d Tage in Folge</string>
+    <string name="streak_happy_days">%1$d glückliche Tage in Folge</string>
+    <string name="month_previous">Vorheriger Monat</string>
+    <string name="month_next">Nächster Monat</string>
+    <string name="desc_open_roll">Diesen Film öffnen</string>
+    <string-array name="daily_motivations">
+        <item>Jeder Tag hat mindestens einen guten Moment.</item>
+        <item>Ein Bild reicht. Auch heute zählt.</item>
+        <item>Schau kurz auf. Etwas lohnt sich.</item>
+        <item>Kleine Dinge machen gute Tage.</item>
+        <item>Du brauchst keinen perfekten Tag, um ihn festzuhalten.</item>
+        <item>Was hat dich heute zum Lächeln gebracht?</item>
+        <item>Fang das Licht ein, solange es da ist.</item>
+        <item>Auch ein ruhiger Tag ist einen Gedanken wert.</item>
+        <item>Das Gewöhnliche wird später kostbar.</item>
+        <item>Ein Bild, ganz ohne Druck.</item>
+        <item>Dein zukünftiges Ich wird sich freuen.</item>
+        <item>Auch ein grauer Tag hat irgendwo Farbe.</item>
+        <item>Halte den Moment fest, nicht den ganzen Tag.</item>
+        <item>Etwas Gutes ist passiert. Finde es.</item>
+        <item>Kein Tag ist zu gewöhnlich für ein Foto.</item>
+        <item>Heute ist bald eine Erinnerung.</item>
+    </string-array>
 </resources>

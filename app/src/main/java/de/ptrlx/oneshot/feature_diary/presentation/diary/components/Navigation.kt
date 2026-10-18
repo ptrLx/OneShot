@@ -1,161 +1,160 @@
 package de.ptrlx.oneshot.feature_diary.presentation.diary.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.dp
-import androidx.navigation.NavDestination
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.navArgument
+import de.ptrlx.oneshot.R
 import de.ptrlx.oneshot.feature_diary.presentation.diary.DiaryViewModel
 import de.ptrlx.oneshot.feature_diary.presentation.diary.components.diary.DiaryScreen
 import de.ptrlx.oneshot.feature_diary.presentation.diary.components.home.HomeScreen
+import de.ptrlx.oneshot.feature_diary.presentation.diary.components.rolls.RollDetailScreen
+import de.ptrlx.oneshot.feature_diary.presentation.diary.components.rolls.RollsOverviewScreen
 import de.ptrlx.oneshot.feature_diary.presentation.diary.components.settings.Settings
-import de.ptrlx.oneshot.feature_diary.presentation.diary.components.stats.StatsScreen
+import de.ptrlx.oneshot.feature_diary.presentation.diary.components.stats.MoodScreen
 import de.ptrlx.oneshot.feature_diary.presentation.diary.util.BottomNavItem
+import de.ptrlx.oneshot.feature_diary.presentation.diary.components.common.DayPart
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+
+/** The three places you live in. Everything else is reached from them and dismissed with back. */
+private val TOP_LEVEL_ROUTES = setOf("home", "diary", "stats")
+
+private val ROLL_MONTH_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM")
+
+/** Route of the roll detail for [month]. */
+fun rollRoute(month: YearMonth): String = "roll/${month.format(ROLL_MONTH_FORMAT)}"
 
 /**
- * Composable that creates a bottom navigation bar.
+ * The top bar of the three top-level screens.
  *
- * @param modifier
- * @param items
- * @param navController
+ * No scroll behaviour is attached on purpose, so it stays put while the content scrolls under it.
+ * The detail screens bring their own back bar instead, which is why this is hidden there.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AppTopBar(navController: NavHostController) {
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val route = backStackEntry?.destination?.route
+    if (route !in TOP_LEVEL_ROUTES) return
+
+    val dayPart = DayPart.of()
+    val title = when (route) {
+        "diary" -> stringResource(R.string.route_diary)
+        "stats" -> stringResource(R.string.route_statistics)
+        else -> "${stringResource(dayPart.greeting)}  ${dayPart.emoji}"
+    }
+
+    TopAppBar(
+        title = {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        actions = {
+            IconButton(onClick = {
+                navController.navigate("settings") { launchSingleTop = true }
+            }) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = stringResource(R.string.settings)
+                )
+            }
+        }
+    )
+}
+
+/**
+ * The Material 3 navigation bar.
  *
+ * It is only shown on the three top-level destinations; a roll, a day or the settings are detail
+ * screens pushed on top, so they keep the bar hidden and return with back.
  */
 @Composable
 fun BottomNavigationBar(
     modifier: Modifier = Modifier,
     items: List<BottomNavItem>,
-    navController: NavHostController,
+    navController: NavHostController
 ) {
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val currentIsBottomNavItem =
-        (backStackEntry?.destination?.route.let { it == "home" || it == "diary" || it == "stats" })
+    val currentDestination = backStackEntry?.destination
+    if (currentDestination?.route !in TOP_LEVEL_ROUTES) return
 
-    AnimatedVisibility(
-        visible = currentIsBottomNavItem,
-        enter = slideInVertically(initialOffsetY = { it / 2 }),
-        exit = slideOutVertically(targetOffsetY = { it / 2 })
-    ) {
-        Row(
-            modifier = modifier
-                .background(MaterialTheme.colorScheme.background)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            items.forEach { item ->
-                AddItem(
-                    item = item,
-                    currentDestination = backStackEntry?.destination,
-                    controller = navController
-                )
-            }
-        }
-    }
-}
-
-/**
- * Composable to create one bottom navigation item.
- *
- * @param item
- * @param currentDestination
- * @param controller
- */
-@Composable
-private fun AddItem(
-    item: BottomNavItem,
-    currentDestination: NavDestination?,
-    controller: NavHostController
-) {
-    val selected = currentDestination?.hierarchy?.any {
-        (it.route == item.route)
-    } == true
-
-    val background =
-        if (selected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.background
-
-    val contentColor =
-        if (selected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onBackground
-
-    Box(
-        modifier = Modifier
-            .padding(top = 8.dp)
-            .height(40.dp)
-            .clip(CircleShape)
-            .background(background)
-            .clickable {
-                if (!selected)
-                    controller.navigate(item.route) {
-                        popUpTo(controller.graph.findStartDestination().id)
+    NavigationBar(modifier = modifier) {
+        items.forEach { item ->
+            val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
+            NavigationBarItem(
+                selected = selected,
+                onClick = {
+                    if (!selected) navController.navigate(item.route) {
+                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                         launchSingleTop = true
+                        restoreState = true
                     }
-            }
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(start = 10.dp, end = 10.dp, top = 8.dp, bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Icon(
-                painter = item.painter,
-                contentDescription = item.name,
-                tint = contentColor
+                },
+                icon = { Icon(painter = item.painter, contentDescription = item.name) },
+                label = { Text(item.name) }
             )
-            AnimatedVisibility(visible = selected) {
-                Text(
-                    text = item.name,
-                    color = contentColor
-                )
-            }
         }
     }
 }
 
 /**
- * Root-Composable that handles navigation of main screen.
- *
- * @param viewModel
- * @param controller
+ * Root composable that handles navigation of the main screen.
  */
 @Composable
 fun Navigation(
     viewModel: DiaryViewModel,
     controller: NavHostController,
-    screenModifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
 ) {
-    // The Scaffold reports how much space the bars take, so the content no longer guesses it
-    // with a hardcoded bottom padding.
-    val modifier = screenModifier.fillMaxSize()
-
-    NavHost(navController = controller, startDestination = "home") {
-        composable("home") {
-            HomeScreen(modifier, viewModel, controller = controller)
-        }
-        composable("diary") {
-            DiaryScreen(modifier, viewModel)
-        }
-        composable("stats") {
-            StatsScreen(modifier, viewModel)
-        }
+    NavHost(
+        navController = controller,
+        startDestination = "home",
+        modifier = modifier.fillMaxSize()
+    ) {
+        composable("home") { HomeScreen(viewModel = viewModel, controller = controller) }
+        composable("diary") { DiaryScreen(viewModel = viewModel, controller = controller) }
+        composable("stats") { MoodScreen(viewModel = viewModel, controller = controller) }
         composable("settings") {
-            Settings(
-                Modifier.fillMaxSize(), viewModel, controller = controller
+            Settings(Modifier.fillMaxSize(), viewModel, controller = controller)
+        }
+        composable("rolls") {
+            RollsOverviewScreen(viewModel = viewModel, controller = controller)
+        }
+        composable(
+            route = "roll/{month}",
+            arguments = listOf(navArgument("month") { type = NavType.StringType })
+        ) { entry ->
+            val month = entry.arguments?.getString("month")
+                ?.let { runCatching { YearMonth.parse(it, ROLL_MONTH_FORMAT) }.getOrNull() }
+                ?: YearMonth.from(viewModel.today)
+            RollDetailScreen(
+                viewModel = viewModel,
+                controller = controller,
+                month = month
             )
         }
     }
